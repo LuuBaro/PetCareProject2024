@@ -68,25 +68,25 @@ const SidebarMenu = () => {
                                     <Link to="/products" className="w-full">Quản lý sản phẩm</Link>
                                 </li>
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-details" className="w-full">Quản lý CTSP</Link>
+                                    <Link to="/product-details" className="w-full">Quản lý biến thể</Link>
                                 </li>
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/brands" className="w-full">Quản lý Brand</Link>
+                                    <Link to="/brands" className="w-full">Quản lý thương hiệu</Link>
                                 </li>
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-color" className="w-full">Quản lý color</Link>
+                                    <Link to="/product-color" className="w-full">Quản lý màu sắc</Link>
                                 </li>
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-image" className="w-full">Quản lý img</Link>
+                                    <Link to="/product-image" className="w-full">Quản lý hình</Link>
                                 </li>
+                                {/*<li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">*/}
+                                {/*    <Link to="/product-size" className="w-full">Quản lý kích thước</Link>*/}
+                                {/*</li>*/}
+                                {/*<li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">*/}
+                                {/*    <Link to="/product-weights" className="w-full">Quản lý cân nặng</Link>*/}
+                                {/*</li>*/}
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-size" className="w-full">Quản lý sizes</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-weights" className="w-full">Quản lý weights</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-categories" className="w-full">Quản lý loại SP</Link>
+                                    <Link to="/product-categories" className="w-full">Quản lý loại</Link>
                                 </li>
                             </ul>
                         )}

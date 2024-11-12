@@ -13,7 +13,5 @@ public class ProductSize {
     private String productSize;
     private Boolean status;
 
-    @ManyToOne
-    @JoinColumn(name = "productDetailId")
-    private ProductDetail productDetail;
+
 }

@@ -13,4 +13,7 @@ public class ProductCategogy {
 
     @Column(name = "categogyName", columnDefinition = "NVARCHAR(255)")
     private String categogyName;
+
+    @Column(name = "image")
+    private String image;
 }
