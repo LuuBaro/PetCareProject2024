@@ -46,7 +46,7 @@ export default function Header() {
     setIsAuthenticated(false);
     navigate("/"); // Chuyển về trang chủ
   };
-  
+
   const handleSearchSubmit = (event) => {
     if (event.key === "Enter") {
       // Thực hiện tìm kiếm
@@ -136,22 +136,24 @@ export default function Header() {
                     alt="User Avatar"
                     className="h-9 w-9 rounded-full"
                   />
-                 <span className="ml-2">Xin chào, {localStorage.getItem('fullName')}!</span> {/* Sử dụng fullName */}
+                  <span className="ml-2">Xin chào, {localStorage.getItem('fullName')}!</span> {/* Sử dụng fullName */}
                 </button>
 
                 {isOpen && (
                   <ul className="absolute w-[200px] right-[-30px] mt-2 border-gray-500 bg-blue-100 text-black rounded-md shadow-lg z-50">
                     <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
                       <Link to="/user">
-                      <button className="px-4 py-2 flex items-center justify-center gap-2" >
-                        <LocalShippingOutlinedIcon /> Quản lý đơn hàng
-                      </button>
+                        <button className="px-4 py-2 flex items-center justify-center gap-2" >
+                          <LocalShippingOutlinedIcon /> Quản lý đơn hàng
+                        </button>
                       </Link>
                     </li>
                     <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                      <button className="px-4 py-2 flex items-center justify-center gap-2">
-                        <AssignmentIndOutlinedIcon /> Quản lý tài khoản
-                      </button>
+                      <Link to="/account">
+                        <button className="px-4 py-2 flex items-center justify-center gap-2">
+                          <AssignmentIndOutlinedIcon /> Quản lý tài khoản
+                        </button>
+                      </Link>
                     </li>
                     {userRole === "Admin" && (
                       <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
