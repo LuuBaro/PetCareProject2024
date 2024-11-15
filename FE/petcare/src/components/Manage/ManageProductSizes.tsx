@@ -1,188 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import ProductSizesService from '../../service/ProductSizesService'; // Import for product sizes
-import ProductDetailService from '../../service/ProductDetailService'; // Import for product details
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-const ProductSizeManager = () => {
-  const [sizes, setSizes] = useState([]); // State for managing product sizes
-  const [productDetails, setProductDetails] = useState([]); // State for managing product details
-  const [formData, setFormData] = useState({ sizeName: '', productDetailId: '' });
-  const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editId, setEditId] = useState(null);
+const API_URL = 'http://localhost:8080/api/product-sizes';
+
+interface ProductSize {
+  productSizeId: number;
+  productSize: string;
+  status: boolean;
+}
+
+const ProductSizeManager: React.FC = () => {
+  const [productSizes, setProductSizes] = useState<ProductSize[]>([]);
+  const [newSize, setNewSize] = useState<string>('');
+  const [newStatus, setNewStatus] = useState<boolean>(true); // Default status set to true (Active)
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [editSizeId, setEditSizeId] = useState<number | null>(null);
+  const [editSize, setEditSize] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<boolean>(true);
 
   useEffect(() => {
-    loadSizes();
-    loadProductDetails(); // Load product details on component mount
+    fetchProductSizes();
   }, []);
 
-  const loadSizes = async () => {
-    setLoading(true);
+  // Fetch all product sizes
+  const fetchProductSizes = async () => {
+    setIsLoading(true);
     try {
-      const response = await ProductSizesService.getAllProductSizes();
-      setSizes(response); // Directly set response if it's already the data you need
+      const response = await axios.get(API_URL);
+      setProductSizes(response.data);
     } catch (error) {
-      console.error('Error loading product sizes', error);
+      console.error('Error fetching product sizes:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setLoading(false);
   };
 
-  const loadProductDetails = async () => {
+  // Create a new product size
+  const addProductSize = async () => {
+    if (!newSize.trim()) return;
+    const newProductSize = { productSize: newSize, status: newStatus };
     try {
-      const response = await ProductDetailService.getAllProductDetails();
-      setProductDetails(response); // Assuming response is the list of product details
+      const response = await axios.post(API_URL, newProductSize);
+      setProductSizes([...productSizes, response.data]);
+      setNewSize('');
+      setNewStatus(true); // Reset to Active after adding
     } catch (error) {
-      console.error('Error loading product details', error);
+      console.error('Error creating product size:', error);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Delete a product size
+  const deleteProductSize = async (id: number) => {
     try {
-      const productSizeData = {
-        sizeName: formData.sizeName,
-        productDetail: { productDetailId: formData.productDetailId },
-      };
-
-      if (editMode) {
-        // Update mode
-        await ProductSizesService.saveProductSize({ ...productSizeData, productSizeId: editId });
-        setEditMode(false);
-      } else {
-        // Create new size
-        await ProductSizesService.saveProductSize(productSizeData);
-      }
-      setFormData({ sizeName: '', productDetailId: '' });
-      loadSizes(); // Reload the sizes after adding or updating
+      await axios.delete(`${API_URL}/${id}`);
+      setProductSizes(productSizes.filter(size => size.productSizeId !== id));
     } catch (error) {
-      console.error('Error saving product size', error);
-    }
-    setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this size?')) {
-      try {
-        await ProductSizesService.deleteProductSize(id);
-        loadSizes(); // Reload the sizes after deletion
-      } catch (error) {
-        console.error('Error deleting product size', error);
-      }
+      console.error('Error deleting product size:', error);
     }
   };
 
-  const handleEdit = (size) => {
-    setFormData({
-      sizeName: size.sizeName,
-      productDetailId: size.productDetail.productDetailId,
-    });
-    setEditId(size.productSizeId); // Change to productSizeId
-    setEditMode(true);
-  };
+  // Update an existing product size
+  const updateProductSize = async () => {
+    if (editSizeId === null || !editSize.trim()) return;
 
-  const handleCancelEdit = () => {
-    setFormData({ sizeName: '', productDetailId: '' });
-    setEditMode(false);
-    setEditId(null);
+    try {
+      const updatedProductSize = { productSize: editSize, status: editStatus };
+      await axios.put(`${API_URL}/${editSizeId}`, updatedProductSize);
+      setProductSizes(productSizes.map(size =>
+          size.productSizeId === editSizeId
+              ? { ...size, productSize: editSize, status: editStatus }
+              : size
+      ));
+      setEditSizeId(null); // Close the editor
+    } catch (error) {
+      console.error('Error updating product size:', error);
+    }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Product Size Manager</h1>
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-6 text-center">Product Size Manager</h2>
 
-      {/* Form for Adding/Editing Sizes */}
-      <form onSubmit={handleSubmit} className="mb-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Size Name</label>
+        {/* Add New Size */}
+        <div className="mb-6 flex justify-center space-x-2">
           <input
-            type="text"
-            name="sizeName"
-            value={formData.sizeName}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            placeholder="Enter size name"
-            required
+              type="text"
+              value={newSize}
+              onChange={(e) => setNewSize(e.target.value)}
+              placeholder="Enter new product size"
+              className="p-2 border border-gray-300 rounded-md w-60"
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Product Detail</label>
           <select
-            name="productDetailId"
-            value={formData.productDetailId}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            required
+              value={newStatus ? 'Active' : 'Inactive'}
+              onChange={(e) => setNewStatus(e.target.value === 'Active')}
+              className="p-2 border border-gray-300 rounded-md"
           >
-            <option value="">Select a product detail</option>
-            {productDetails.map((detail) => (
-              <option key={detail.productDetailId} value={detail.productDetailId}>
-                {detail.products.productName} - {detail.quantity} - {detail.price}
-              </option>
-            ))}
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
           </select>
-        </div>
-
-        <div className="space-x-2">
           <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
+              onClick={addProductSize}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md w-32"
           >
-            {loading ? (editMode ? 'Updating...' : 'Saving...') : editMode ? 'Update Size' : 'Save Size'}
+            Add Size
           </button>
-          {editMode && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Cancel Edit
-            </button>
-          )}
         </div>
-      </form>
 
-      {/* Table of Product Sizes */}
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2 px-4 border-b">Size Name</th>
-            <th className="py-2 px-4 border-b">Product Detail</th>
-            <th className="py-2 px-4 border-b">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sizes.map((size) => (
-            <tr key={size.productSizeId}> {/* Change to productSizeId */}
-              <td className="py-2 px-4 border-b">{size.sizeName}</td>
-              <td className="py-2 px-4 border-b">
-                {size.productDetail.products.productName} - {size.productDetail.quantity} - {size.productDetail.price}
-              </td>
-              <td className="py-2 px-4 border-b space-x-2">
-                <button
-                  onClick={() => handleEdit(size)}
-                  className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-700"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(size.productSizeId)} // Change to productSizeId
-                  className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        {/* Display Product Sizes */}
+        {isLoading ? (
+            <p className="text-center">Loading...</p>
+        ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto border-collapse border border-gray-300">
+                <thead className="bg-gray-200">
+                <tr>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">ID</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Product Size</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Status</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {productSizes.map((size) => (
+                    <tr key={size.productSizeId} className="hover:bg-gray-100">
+                      <td className="py-2 px-4 border-b text-sm">{size.productSizeId}</td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editSizeId === size.productSizeId ? (
+                            <input
+                                type="text"
+                                value={editSize}
+                                onChange={(e) => setEditSize(e.target.value)}
+                                className="p-2 border border-gray-300 rounded-md w-60"
+                            />
+                        ) : (
+                            size.productSize
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editSizeId === size.productSizeId ? (
+                            <select
+                                value={editStatus ? 'Active' : 'Inactive'}
+                                onChange={(e) => setEditStatus(e.target.value === 'Active')}
+                                className="p-2 border border-gray-300 rounded-md"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="Inactive">Inactive</option>
+                            </select>
+                        ) : (
+                            <span className={`inline-block px-2 py-1 rounded-md ${size.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                        {size.status ? 'Active' : 'Inactive'}
+                      </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editSizeId === size.productSizeId ? (
+                            <button
+                                onClick={updateProductSize}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                            >
+                              Save
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                  setEditSizeId(size.productSizeId);
+                                  setEditSize(size.productSize);
+                                  setEditStatus(size.status);
+                                }}
+                                className="text-blue-500 hover:text-blue-700 mr-2"
+                            >
+                              Edit
+                            </button>
+                        )}
+                        <button
+                            onClick={() => deleteProductSize(size.productSizeId)}
+                            className="text-red-500 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+        )}
+      </div>
   );
 };
 

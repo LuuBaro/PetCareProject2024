@@ -29,6 +29,10 @@ public class ProductDetailService {
         return productDetailRepository.findById(id);
     }
 
+    public Optional<ProductDetail> getProductColorById(Long id) {
+        return productDetailRepository.findById(id);
+    }
+
     // Delete a ProductDetail by ID
     public void deleteProductDetail(Long id) {
         productDetailRepository.deleteById(id);

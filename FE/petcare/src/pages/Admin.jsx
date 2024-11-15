@@ -23,7 +23,7 @@ function Admin() {
     <Router>
       <div className="flex flex-col h-screen bg-gray-100">
         {/* TopBar will take full width at the top */}
-        <header className="w-full shadow-lg bg-white">
+        <header className="w-full shadow-lg bg-white ">
           <TopBar />
         </header>
 

@@ -15,8 +15,5 @@ public class ProductColor {
     private String color;
     private Boolean status;
 
-    @ManyToOne
-    @JoinColumn(name = "productDetailId")
-    private ProductDetail productDetail;
 
 }

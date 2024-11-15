@@ -13,7 +13,5 @@ public class ProductWeight {
     private String weightValue;
     private Boolean status;
 
-    @ManyToOne
-    @JoinColumn(name = "productDetailId")
-    private ProductDetail productDetail;
+
 }

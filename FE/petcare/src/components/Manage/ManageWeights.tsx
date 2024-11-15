@@ -1,188 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import WeightsService from '../../service/WeightsService'; // Import for weights service
-import ProductDetailService from '../../service/ProductDetailService'; // Import for product details
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-const ManageWeights = () => {
-  const [weights, setWeights] = useState([]); // State for managing weights
-  const [productDetails, setProductDetails] = useState([]); // State for managing product details
-  const [formData, setFormData] = useState({ weightValue: '', productDetailId: '' });
-  const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editId, setEditId] = useState(null);
+const API_URL = 'http://localhost:8080/api/product-weights';
+
+interface ProductWeight {
+  productWeightId: number;
+  weightValue: string;
+  status: boolean;
+}
+
+const ManageWeights: React.FC = () => {
+  const [productWeights, setProductWeights] = useState<ProductWeight[]>([]);
+  const [newWeight, setNewWeight] = useState<string>('');
+  const [newStatus, setNewStatus] = useState<boolean>(true); // Default status set to Active
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [editWeightId, setEditWeightId] = useState<number | null>(null);
+  const [editWeightValue, setEditWeightValue] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<boolean>(true);
 
   useEffect(() => {
-    loadWeights();
-    loadProductDetails(); // Load product details on component mount
+    fetchProductWeights();
   }, []);
 
-  const loadWeights = async () => {
-    setLoading(true);
+  // Fetch all product weights
+  const fetchProductWeights = async () => {
+    setIsLoading(true);
     try {
-      const response = await WeightsService.getAllWeights();
-      setWeights(response); // Directly set response if it's already the data you need
+      const response = await axios.get(API_URL);
+      setProductWeights(response.data);
     } catch (error) {
-      console.error('Error loading weights', error);
+      console.error('Error fetching product weights:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setLoading(false);
   };
 
-  const loadProductDetails = async () => {
+  // Create a new product weight
+  const addProductWeight = async () => {
+    if (!newWeight.trim()) return;
+    const newProductWeight = { weightValue: newWeight, status: newStatus };
     try {
-      const response = await ProductDetailService.getAllProductDetails();
-      setProductDetails(response); // Assuming response is the list of product details
+      const response = await axios.post(API_URL, newProductWeight);
+      setProductWeights([...productWeights, response.data]);
+      setNewWeight('');
+      setNewStatus(true); // Reset to Active after adding
     } catch (error) {
-      console.error('Error loading product details', error);
+      console.error('Error creating product weight:', error);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Delete a product weight
+  const deleteProductWeight = async (id: number) => {
     try {
-      const weightData = {
-        weight_value: formData.weightValue,
-        productDetail: { productDetailId: formData.productDetailId },
-      };
-
-      if (editMode) {
-        // Update mode
-        await WeightsService.saveWeight({ ...weightData, weight_id: editId });
-        setEditMode(false);
-      } else {
-        // Create new weight
-        await WeightsService.saveWeight(weightData);
-      }
-      setFormData({ weightValue: '', productDetailId: '' });
-      loadWeights(); // Reload the weights after adding or updating
+      await axios.delete(`${API_URL}/${id}`);
+      setProductWeights(productWeights.filter(weight => weight.productWeightId !== id));
     } catch (error) {
-      console.error('Error saving weight', error);
-    }
-    setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this weight?')) {
-      try {
-        await WeightsService.deleteWeight(id);
-        loadWeights(); // Reload the weights after deletion
-      } catch (error) {
-        console.error('Error deleting weight', error);
-      }
+      console.error('Error deleting product weight:', error);
     }
   };
 
-  const handleEdit = (weight) => {
-    setFormData({
-      weightValue: weight.weight_value,
-      productDetailId: weight.productDetail.productDetailId,
-    });
-    setEditId(weight.weight_id); // Change to weight_id
-    setEditMode(true);
-  };
+  // Update an existing product weight
+  const updateProductWeight = async () => {
+    if (editWeightId === null || !editWeightValue.trim()) return;
 
-  const handleCancelEdit = () => {
-    setFormData({ weightValue: '', productDetailId: '' });
-    setEditMode(false);
-    setEditId(null);
+    try {
+      const updatedProductWeight = { weightValue: editWeightValue, status: editStatus };
+      await axios.put(`${API_URL}/${editWeightId}`, updatedProductWeight);
+      setProductWeights(productWeights.map(weight =>
+          weight.productWeightId === editWeightId
+              ? { ...weight, weightValue: editWeightValue, status: editStatus }
+              : weight
+      ));
+      setEditWeightId(null); // Close the editor
+    } catch (error) {
+      console.error('Error updating product weight:', error);
+    }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Manage Weights</h1>
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-6 text-center">Manage Product Weights</h2>
 
-      {/* Form for Adding/Editing Weights */}
-      <form onSubmit={handleSubmit} className="mb-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Weight Value</label>
+        {/* Add New Weight */}
+        <div className="mb-6 flex justify-center space-x-2">
           <input
-            type="text"
-            name="weightValue"
-            value={formData.weightValue}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            placeholder="Enter weight value"
-            required
+              type="text"
+              value={newWeight}
+              onChange={(e) => setNewWeight(e.target.value)}
+              placeholder="Enter new product weight"
+              className="p-2 border border-gray-300 rounded-md w-60"
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Product Detail</label>
           <select
-            name="productDetailId"
-            value={formData.productDetailId}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            required
+              value={newStatus ? 'Active' : 'Inactive'}
+              onChange={(e) => setNewStatus(e.target.value === 'Active')}
+              className="p-2 border border-gray-300 rounded-md"
           >
-            <option value="">Select a product detail</option>
-            {productDetails.map((detail) => (
-              <option key={detail.productDetailId} value={detail.productDetailId}>
-                {detail.products.productName} - {detail.quantity} - {detail.price}
-              </option>
-            ))}
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
           </select>
-        </div>
-
-        <div className="space-x-2">
           <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
+              onClick={addProductWeight}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md w-32"
           >
-            {loading ? (editMode ? 'Updating...' : 'Saving...') : editMode ? 'Update Weight' : 'Save Weight'}
+            Add Weight
           </button>
-          {editMode && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Cancel Edit
-            </button>
-          )}
         </div>
-      </form>
 
-      {/* Table of Weights */}
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2 px-4 border-b">Weight Value</th>
-            <th className="py-2 px-4 border-b">Product Detail</th>
-            <th className="py-2 px-4 border-b">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {weights.map((weight) => (
-            <tr key={weight.weight_id}> {/* Change to weight_id */}
-              <td className="py-2 px-4 border-b">{weight.weight_value}</td>
-              <td className="py-2 px-4 border-b">
-                {weight.productDetail.products.productName} - {weight.productDetail.quantity} - {weight.productDetail.price}
-              </td>
-              <td className="py-2 px-4 border-b space-x-2">
-                <button
-                  onClick={() => handleEdit(weight)}
-                  className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-700"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(weight.weight_id)} // Change to weight_id
-                  className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        {/* Display Product Weights */}
+        {isLoading ? (
+            <p className="text-center">Loading...</p>
+        ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto border-collapse border border-gray-300">
+                <thead className="bg-gray-200">
+                <tr>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">ID</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Weight Value</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Status</th>
+                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {productWeights.map((weight) => (
+                    <tr key={weight.productWeightId} className="hover:bg-gray-100">
+                      <td className="py-2 px-4 border-b text-sm">{weight.productWeightId}</td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editWeightId === weight.productWeightId ? (
+                            <input
+                                type="text"
+                                value={editWeightValue}
+                                onChange={(e) => setEditWeightValue(e.target.value)}
+                                className="p-2 border border-gray-300 rounded-md w-60"
+                            />
+                        ) : (
+                            weight.weightValue
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editWeightId === weight.productWeightId ? (
+                            <select
+                                value={editStatus ? 'Active' : 'Inactive'}
+                                onChange={(e) => setEditStatus(e.target.value === 'Active')}
+                                className="p-2 border border-gray-300 rounded-md"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="Inactive">Inactive</option>
+                            </select>
+                        ) : (
+                            <span className={`inline-block px-2 py-1 rounded-md ${weight.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                        {weight.status ? 'Active' : 'Inactive'}
+                      </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {editWeightId === weight.productWeightId ? (
+                            <button
+                                onClick={updateProductWeight}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                            >
+                              Save
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                  setEditWeightId(weight.productWeightId);
+                                  setEditWeightValue(weight.weightValue);
+                                  setEditStatus(weight.status);
+                                }}
+                                className="text-blue-500 hover:text-blue-700 mr-2"
+                            >
+                              Edit
+                            </button>
+                        )}
+                        <button
+                            onClick={() => deleteProductWeight(weight.productWeightId)}
+                            className="text-red-500 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+        )}
+      </div>
   );
 };
 

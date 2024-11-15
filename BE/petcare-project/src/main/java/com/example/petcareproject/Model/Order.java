@@ -43,10 +43,6 @@ public class Order {
     private Voucher voucher;
 
     @ManyToOne
-    @JoinColumn(name = "addressId")
-    private Address address;
-
-    @ManyToOne
     @JoinColumn(name = "pointId")
     private Point point;
 }

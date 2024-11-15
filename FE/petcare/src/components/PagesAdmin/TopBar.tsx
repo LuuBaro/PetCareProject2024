@@ -4,14 +4,8 @@ import { Link } from "react-router-dom";
 
 const TopBar = () => {
     return (
-        <header className="bg-gray-900 text-white flex items-center p-4 border-b border-gray-700">
-            <div className="justify-between d-flex w-full">
-                <input
-                    type="text"
-                    placeholder="Tìm kiếm..."
-                    className="w-full bg-gray-800 text-white p-2 rounded-md focus:outline-none"
-                />
-            </div>
+        <header className="bg-[#00B7C0] relative text-white flex items-center p-4 border-b border-gray-700">
+
             <div className="ml-4 flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                     <span className="font-semibold">Thanh Phát</span>
@@ -22,6 +16,7 @@ const TopBar = () => {
                     />
                 </div>
             </div>
+
         </header>
     );
 };
