@@ -17,6 +17,13 @@ public interface ProductDetailRepository extends JpaRepository<ProductDetail, Lo
     @Query("UPDATE ProductDetail pd SET pd.quantity = :quantity WHERE pd.product.productId = :productId")
     void updateProductDetailQuantity(@Param("productId") Long productId, @Param("quantity") int quantity);
 
+    // New query to find ProductDetail by ProductColorId
+    @Query("SELECT pd FROM ProductDetail pd WHERE pd.productColor.productColorId = :colorId")
+    ProductDetail findByProductColorId(@Param("colorId") Long colorId);
 
+    // New query to update the ProductColor of a ProductDetail
+    @Modifying
+    @Query("UPDATE ProductDetail pd SET pd.productColor.productColorId = :colorId WHERE pd.product.productId = :productId")
+    void updateProductDetailColor(@Param("productId") Long productId, @Param("colorId") Long colorId);
 
 }

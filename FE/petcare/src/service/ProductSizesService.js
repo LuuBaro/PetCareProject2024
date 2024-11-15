@@ -1,35 +1,62 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/product-sizes'; // Your API endpoint
+// Base URL của API ProductSize
+const BASE_URL = 'http://localhost:8080/api/product-sizes';
 
-class ProductSizesService {
-  // Lấy tất cả kích thước sản phẩm
-  async getAllProductSizes() {
-    const response = await axios.get(API_URL);
-    return response.data; // Assuming the data is in response.data
-  }
+const ProductSizeService = {
+    // Lấy danh sách tất cả các ProductSize
+    getAllProductSizes: async () => {
+        try {
+            const response = await axios.get(BASE_URL);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching product sizes:', error);
+            throw error;
+        }
+    },
 
-  // Lấy kích thước sản phẩm theo ID
-  async getProductSizeById(id) {
-    const response = await axios.get(`${API_URL}/${id}`);
-    return response.data; // Assuming the data is in response.data
-  }
+    // Lấy thông tin ProductSize theo ID
+    getProductSizeById: async (id) => {
+        try {
+            const response = await axios.get(`${BASE_URL}/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching product size with ID ${id}:`, error);
+            throw error;
+        }
+    },
 
-  // Tạo mới hoặc cập nhật kích thước sản phẩm
-  async saveProductSize(productSize) {
-    if (productSize.sizeId) {
-      // Nếu có sizeId thì gọi PUT cho việc cập nhật
-      return await axios.put(`${API_URL}/${productSize.sizeId}`, productSize);
-    } else {
-      // Nếu không có sizeId thì gọi POST cho việc tạo mới
-      return await axios.post(API_URL, productSize);
-    }
-  }
+    // Thêm mới ProductSize
+    createProductSize: async (productSize) => {
+        try {
+            const response = await axios.post(BASE_URL, productSize);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating product size:', error);
+            throw error;
+        }
+    },
 
-  // Xóa kích thước sản phẩm theo ID
-  async deleteProductSize(id) {
-    await axios.delete(`${API_URL}/${id}`);
-  }
-}
+    // Cập nhật ProductSize theo ID
+    updateProductSize: async (id, updatedProductSize) => {
+        try {
+            const response = await axios.put(`${BASE_URL}/${id}`, updatedProductSize);
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product size with ID ${id}:`, error);
+            throw error;
+        }
+    },
 
-export default new ProductSizesService();
+    // Xóa ProductSize theo ID
+    deleteProductSize: async (id) => {
+        try {
+            await axios.delete(`${BASE_URL}/${id}`);
+        } catch (error) {
+            console.error(`Error deleting product size with ID ${id}:`, error);
+            throw error;
+        }
+    },
+};
+
+export default ProductSizeService;

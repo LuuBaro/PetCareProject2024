@@ -1,8 +1,6 @@
-// Import the necessary functions from Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-// Your Firebase configuration (replace with your own Firebase project's credentials)
 const firebaseConfig = {
     apiKey: "AIzaSyB6bcF1pR1E8kmjPQNqQ-k4sZUGFdBy2NY",
     authDomain: "fir-eed33.firebaseapp.com",
@@ -18,5 +16,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app); // Firebase Storage
 
-// Export Firebase storage and helper functions
 export { storage, ref, uploadBytesResumable, getDownloadURL };

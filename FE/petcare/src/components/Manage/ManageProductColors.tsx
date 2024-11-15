@@ -1,188 +1,185 @@
-import React, { useState, useEffect } from 'react';
-import ProductColorsService from '../../service/ProductColorsService';
-import ProductDetailService from '../../service/ProductDetailService'; // Import service to load product details
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import DataTable from 'react-data-table-component'; // Import the DataTable component
 
-const ProductColorManager = () => {
-  const [colors, setColors] = useState([]); // State for managing product colors
-  const [productDetails, setProductDetails] = useState([]); // State for managing product details list
-  const [formData, setFormData] = useState({ colorName: '', productDetailId: '' });
-  const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editId, setEditId] = useState(null);
+const API_URL = 'http://localhost:8080/api/product-colors';
+
+interface ProductColor {
+  productColorId: number;
+  color: string;
+  status: boolean;
+}
+
+const ProductColorManager: React.FC = () => {
+  const [productColors, setProductColors] = useState<ProductColor[]>([]);
+  const [color, setColor] = useState<string>('');
+  const [status, setStatus] = useState<boolean>(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    loadColors();
-    loadProductDetails(); // Load product details on component mount
+    fetchProductColors();
   }, []);
 
-  const loadColors = async () => {
-    setLoading(true);
+  const fetchProductColors = async () => {
     try {
-      const response = await ProductColorsService.getAllProductColors();
-      setColors(response.data); // Assuming response.data contains the list of colors
+      const response = await axios.get<ProductColor[]>(API_URL);
+      setProductColors(response.data);
     } catch (error) {
-      console.error('Error loading product colors', error);
-    }
-    setLoading(false);
-  };
-
-  const loadProductDetails = async () => {
-    try {
-      const response = await ProductDetailService.getAllProductDetails();
-      setProductDetails(response); // Assuming response is the list of product details
-    } catch (error) {
-      console.error('Error loading product details', error);
+      console.error("Error fetching product colors:", error);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    const newProductColor = { color, status };
+
     try {
-      if (editMode) {
-        await ProductColorsService.saveProductColor({
-          productColorId: editId, // Include the ID for updating
-          colorName: formData.colorName,
-          productDetail: { productDetailId: formData.productDetailId }, // Assuming you have the productDetailId available
-        });
-        setEditMode(false);
-      } else {
-        await ProductColorsService.saveProductColor({
-          colorName: formData.colorName,
-          productDetail: { productDetailId: formData.productDetailId },
-        });
-      }
-      setFormData({ colorName: '', productDetailId: '' });
-      loadColors(); // Reload the colors after adding or updating
+      await axios.post(API_URL, newProductColor);
+      fetchProductColors();
+      resetForm();
     } catch (error) {
-      console.error('Error saving product color', error);
-    }
-    setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this color?')) {
-      try {
-        await ProductColorsService.deleteProductColor(id);
-        loadColors(); // Reload the colors after deletion
-      } catch (error) {
-        console.error('Error deleting product color', error);
-      }
+      console.error("Error creating product color:", error);
     }
   };
 
-  const handleEdit = (color) => {
-    setFormData({
-      colorName: color.colorName,
-      productDetailId: color.productDetail.productDetailId,
-    });
-    setEditId(color.productColorId);
-    setEditMode(true);
+  const handleEdit = (id: number) => {
+    const colorToEdit = productColors.find(color => color.productColorId === id);
+    if (colorToEdit) {
+      setColor(colorToEdit.color);
+      setStatus(colorToEdit.status);
+      setEditingId(id);
+    }
   };
 
-  const handleCancelEdit = () => {
-    setFormData({ colorName: '', productDetailId: '' });
-    setEditMode(false);
-    setEditId(null);
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingId === null) return;
+
+    const updatedProductColor = { color, status };
+
+    try {
+      await axios.put(`${API_URL}/${editingId}`, updatedProductColor);
+      fetchProductColors();
+      setEditingId(null); // Reset editing mode
+      resetForm();
+    } catch (error) {
+      console.error("Error updating product color:", error);
+    }
   };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      fetchProductColors();
+    } catch (error) {
+      console.error("Error deleting product color:", error);
+    }
+  };
+
+  const resetForm = () => {
+    setColor('');
+    setStatus(true);
+    setEditingId(null);
+  };
+
+  // Define columns for DataTable
+  const columns = [
+    {
+      name: 'Màu sắc',
+      selector: (row: ProductColor) => row.color,
+      sortable: true,
+    },
+    {
+      name: 'Trạng thái',
+      selector: (row: ProductColor) => (row.status ? 'Kích hoạt' : 'Hủy kích hoạt'),
+      sortable: true,
+      cell: (row: ProductColor) => (
+          <span className={row.status ? 'text-green-500' : 'text-red-500'}>
+          {row.status ? 'Kích hoạt' : 'Hủy kích hoạt'}
+        </span>
+      ),
+    },
+    {
+      name: 'Hành động',
+      cell: (row: ProductColor) => (
+          <div className="flex space-x-2">
+            <button
+                onClick={() => handleEdit(row.productColorId)}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+            >
+              Sửa
+            </button>
+            <button
+                onClick={() => handleDelete(row.productColorId)}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Xóa
+            </button>
+          </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Product Color Manager</h1>
+      <div className="p-8 max-w-4xl mx-auto">
+        <h2 className="text-3xl font-semibold text-center mb-6">Quản lý Màu Sản Phẩm</h2>
 
-      {/* Form for Adding/Editing Colors */}
-      <form onSubmit={handleSubmit} className="mb-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Color Name</label>
-          <input
-            type="text"
-            name="colorName"
-            value={formData.colorName}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            placeholder="Enter color name"
-            required
-          />
-        </div>
+        <form onSubmit={editingId ? handleUpdate : handleCreate} className="mb-8 space-y-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <input
+                  type="text"
+                  placeholder="Màu sắc"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="p-3 border border-gray-300 rounded-lg w-full md:w-2/3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <select
+                  value={status.toString()}
+                  onChange={(e) => setStatus(e.target.value === 'true')}
+                  className="p-3 border border-gray-300 rounded-lg w-full md:w-1/3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="true">Kích hoạt</option>
+                <option value="false">Hủy kích hoạt</option>
+              </select>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium">Product Detail</label>
-          <select
-            name="productDetailId"
-            value={formData.productDetailId}
-            onChange={handleInputChange}
-            className="block w-full mt-1 p-2 border rounded"
-            required
-          >
-            <option value="">Select a product detail</option>
-            {productDetails.map((detail) => (
-              <option key={detail.productDetailId} value={detail.productDetailId}>
-                {detail.products.productName} - {detail.quantity} - {detail.price}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="flex justify-between gap-4">
+              <button
+                  type="submit"
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full md:w-1/2 shadow-md"
+              >
+                {editingId ? 'Cập nhật' : 'Tạo mới'} Màu Sản Phẩm
+              </button>
 
-        <div className="space-x-2">
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
-          >
-            {loading ? (editMode ? 'Updating...' : 'Saving...') : editMode ? 'Update Color' : 'Save Color'}
-          </button>
-          {editMode && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Cancel Edit
-            </button>
-          )}
-        </div>
-      </form>
+              <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 w-full md:w-1/2 shadow-md"
+              >
+                Reset Form
+              </button>
+            </div>
+          </div>
+        </form>
 
-      {/* Table of Product Colors */}
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2 px-4 border-b">Color Name</th>
-            <th className="py-2 px-4 border-b">Product Detail</th>
-            <th className="py-2 px-4 border-b">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {colors.map((color) => (
-            <tr key={color.productColorId}>
-              <td className="py-2 px-4 border-b">{color.colorName}</td>
-              <td className="py-2 px-4 border-b">
-                {color.productDetail.products.productName} - {color.productDetail.quantity} - {color.productDetail.price}
-              </td>
-              <td className="py-2 px-4 border-b space-x-2">
-                <button
-                  onClick={() => handleEdit(color)}
-                  className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-700"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(color.productColorId)}
-                  className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        <h3 className="text-2xl font-semibold mb-4">Danh sách Màu Sản Phẩm</h3>
+        <DataTable
+            columns={columns}
+            data={productColors}
+            pagination
+            highlightOnHover
+            striped
+            responsive
+            customStyles={{
+              headRow: {
+                style: {
+                  backgroundColor: '#f4f4f4',
+                },
+              },
+            }}
+        />
+      </div>
   );
 };
 
