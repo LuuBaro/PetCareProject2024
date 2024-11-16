@@ -1,187 +1,272 @@
 import React, { useState } from 'react';
 import Header from "../header/Header";
 import Footer from '../footer/Footer';
-import { FaUser, FaTicketAlt, FaDollarSign, FaLock } from 'react-icons/fa';
+import { FaUser, FaLock, FaHistory, FaHeart, FaStar, FaGift, FaCoins, FaHeadset } from 'react-icons/fa'
+import axios from 'axios';
 
 export function Account() {
     const [showChangePassword, setShowChangePassword] = useState(false);
-    const [openDropdown, setOpenDropdown] = useState(null); // Track open dropdown (day, month, year)
-    const [selectedDay, setSelectedDay] = useState(null);
-    const [selectedMonth, setSelectedMonth] = useState(null);
-    const [selectedYear, setSelectedYear] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [userInfo, setUserInfo] = useState({
+        fullName: localStorage.getItem('fullName'),
+        email: localStorage.getItem('email'),
+        phone: localStorage.getItem('phone'),
+    });
 
     const closeModal = () => setShowChangePassword(false);
 
-    // Generate arrays for day, month, and year options
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
-    const months = Array.from({ length: 12 }, (_, i) => i + 1);
-    const years = Array.from({ length: 106 }, (_, i) => 1920 + i);
+    const handleEditClick = () => {
+        setIsEditing(true); // Switch to edit mode
+    };
 
-    // Handle selection of date parts
-    const handleDateSelect = (type, value) => {
-        if (type === 'day') {
-            setSelectedDay(value);
-            setOpenDropdown(null); // Close dropdown after selection
-        }
-        if (type === 'month') {
-            setSelectedMonth(value);
-            setOpenDropdown(null); // Close dropdown after selection
-        }
-        if (type === 'year') {
-            setSelectedYear(value);
-            setOpenDropdown(null); // Close dropdown after selection
+    const updateUser = async (id, updatedInfo) => {
+        try {
+            // Get the token from localStorage
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('Token is missing');
+                return; // If token is missing, don't continue
+            }
+
+            // Make the API request
+            const response = await axios.put(
+                `http://localhost:8080/api/users/update/${id}`,
+                updatedInfo, // Send the updated user info
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`, // Add token to the header
+                    }
+                }
+            );
+
+            console.log('User updated successfully:', response.data);
+
+            // Update localStorage with the new user data
+            localStorage.setItem('fullName', response.data.fullName);
+            localStorage.setItem('email', response.data.email);
+            localStorage.setItem('phone', response.data.phone);
+
+            // Update the userInfo state with the new data from the response
+            setUserInfo({
+                fullName: response.data.fullName,
+                email: response.data.email,
+                phone: response.data.phone,
+            });
+
+        } catch (error) {
+            console.error('Error updating user:', error);
+            if (error.response && error.response.status === 403) {
+                console.error('Forbidden: Check your authorization');
+            }
         }
     };
 
+    const handleSaveClick = () => {
+        const updatedInfo = {
+            fullName: userInfo.fullName,
+            email: userInfo.email,
+            phone: userInfo.phone,
+        };
+
+        const userId = localStorage.getItem('userId');
+        updateUser(userId, updatedInfo); // Call updateUser with the new data
+        setIsEditing(false); // Switch to view mode after saving
+    };
+
+    const handleCancelClick = () => {
+        // Reset the userInfo to the original values from localStorage
+        setUserInfo({
+            fullName: localStorage.getItem('fullName'),
+            email: localStorage.getItem('email'),
+            phone: localStorage.getItem('phone'),
+        });
+        setIsEditing(false); // Switch to view mode after canceling
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setUserInfo((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
+    };
+
     return (
-
-
-        <>
+        <div className="flex flex-col min-h-screen">
             <Header />
 
-            <div className="mx-32 p-10 bg-white shadow-lg rounded-lg flex">
+            <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
                 {/* Sidebar Menu */}
-                <div className="w-1/4 pr-8 border-r">
-                    <div className="flex flex-col items-center mb-8">
-                        <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                            <span className="text-gray-400 text-5xl">👤</span>
+
+                <div className="w-1/4 pr-8 bg-gray-300 p-6">
+                    <div className="w-full flex items-center mb-6">
+                        <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-gray-400 text-4xl">👤</span>
                         </div>
-                        <h3 className="text-lg font-semibold">minhkung</h3>
+                        <div className="flex flex-col justify-center ml-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-1">Tài khoản của</h3>
+                            <span className="text-base font-medium text-gray-900">{localStorage.getItem('fullName')}</span>
+                        </div>
                     </div>
-                    <ul className="space-y-5">
-                        <li className="flex items-center text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => setShowChangePassword(false)}>
+                    <ul className="space-y-4 text-sm text-gray-700">
+                        <li className="flex items-center text-gray-800 hover:text-blue-600 cursor-pointer text-lg font-bold" onClick={() => setShowChangePassword(false)}>
                             <FaUser className="mr-3" />
                             <span>Tài Khoản Của Tôi</span>
                         </li>
-                        <li className="flex items-center text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => setShowChangePassword(true)}>
+                        <li className="flex items-center text-gray-800 hover:text-green-600 cursor-pointer text-lg font-bold" onClick={() => setShowChangePassword(true)}>
                             <FaLock className="mr-3" />
                             <span>Đổi Mật Khẩu</span>
                         </li>
-                        <li className="flex items-center text-gray-700 hover:text-blue-600 cursor-pointer">
-                            <FaTicketAlt className="mr-3" />
+                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
+                            <FaHistory className="mr-3" />
+                            <span>Lịch Sử Mua Hàng</span>
+                        </li>
+                        <li className="flex items-center text-gray-700 hover:text-pink-500 cursor-pointer text-lg font-bold">
+                            <FaHeart className="mr-3" />
+                            <span>Sản Phẩm Yêu Thích</span>
+                        </li>
+                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
+                            <FaStar className="mr-3" />
+                            <span>Đánh Giá Sản Phẩm</span>
+                        </li>
+                        <li className="flex items-center text-gray-800 hover:text-orange-600 cursor-pointer text-lg font-bold">
+                            <FaGift className="mr-3" />
                             <span>Kho Voucher</span>
                         </li>
-                        <li className="flex items-center text-gray-700 hover:text-blue-600 cursor-pointer">
-                            <FaDollarSign className="mr-3" />
-                            <span>Shopee Xu</span>
+                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
+                            <FaCoins className="mr-3" />
+                            <span>Petcare Xu</span>
+                        </li>
+                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
+                            <FaHeadset className="mr-3" />
+                            <span>Hỗ Trợ Khách Hàng</span>
                         </li>
                     </ul>
                 </div>
 
                 {/* Main Content */}
-                <div className="w-3/4 pl-10">
-                    <div>
-                        <h2 className="text-2xl font-semibold mb-6">Hồ Sơ Của Tôi</h2>
-                        <p className="text-sm text-gray-600 mb-6">
+                <div className="w-3/4 pl-10 bg-gray-100">
+                    <div className="items-center">
+                        <h2 className="text-4xl font-extrabold mb-6 text-gray-700">Thông tin cá nhân</h2>
+                        <p className="text-sm text-gray-600 mb-6 font-bold italic">
                             Quản lý thông tin hồ sơ để bảo mật tài khoản
                         </p>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            {/* Profile fields */}
-                            <div className="space-y-5">
-                                <div className="flex justify-between">
-                                    <label className="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
-                                    <p className="text-gray-900">minhkung</p>
-                                </div>
 
-                                <div className="flex justify-between">
-                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Tên</label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Tên"
-                                    />
-                                </div>
-                                <div className="flex items-center mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mx-2">Email</label>
-                                    <button className="text-blue-600 cursor-pointer">Thêm</button>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
-                                    <button className="text-gray-900">
-                                        ********64 <span className="text-blue-600 cursor-pointer">Thay Đổi</span>
+                        <div className="flex items-start">
+                            {/* Avatar Section */}
+                            <div className="flex flex-col items-center mr-12">
+                                <div className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
+                                    <span className="text-5xl text-blue-400">👤</span>
+                                    <button className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full">
+                                        <i className="fas fa-pencil-alt text-white"></i>
                                     </button>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Giới tính</label>
-                                    <div className="flex items-center space-x-6">
-                                        <label className="flex items-center">
-                                            <input type="radio" name="gender" className="mr-2" /> Nam
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input type="radio" name="gender" className="mr-2" /> Nữ
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input type="radio" name="gender" className="mr-2" /> Khác
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center space-x-4">
-                                    <label className="text-sm text-gray-700">Ngày sinh</label>
-
-                                    {/* Button cho Ngày */}
-                                    <div className="relative">
-                                        <button className="w-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-left" onClick={() => setOpenDropdown(openDropdown === 'day' ? null : 'day')}>
-                                            {selectedDay ? `Ngày ${selectedDay}` : 'Ngày'}
-                                        </button>
-                                        {openDropdown === 'day' && (
-                                            <div className="absolute top-full left-0 w-24 max-h-32 overflow-y-auto bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10">
-                                                {days.map(day => (
-                                                    <div key={day} className="p-2 cursor-pointer hover:bg-blue-100" onClick={() => handleDateSelect('day', day)}>{day}</div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Button cho Tháng */}
-                                    <div className="relative">
-                                        <button className="w-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-left" onClick={() => setOpenDropdown(openDropdown === 'month' ? null : 'month')}>
-                                            {selectedMonth ? `Tháng ${selectedMonth}` : 'Tháng'}
-                                        </button>
-                                        {openDropdown === 'month' && (
-                                            <div className="absolute top-full left-0 w-24 max-h-32 overflow-y-auto bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10">
-                                                {months.map(month => (
-                                                    <div key={month} className="p-2 cursor-pointer hover:bg-blue-100" onClick={() => handleDateSelect('month', month)}>Tháng {month}</div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Button cho Năm */}
-                                    <div className="relative">
-                                        <button className="w-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-left" onClick={() => setOpenDropdown(openDropdown === 'year' ? null : 'year')}>
-                                            {selectedYear ? `Năm ${selectedYear}` : 'Năm'}
-                                        </button>
-                                        {openDropdown === 'year' && (
-                                            <div className="absolute top-full left-0 w-24 max-h-32 overflow-y-auto bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10">
-                                                {years.map(year => (
-                                                    <div key={year} className="p-2 cursor-pointer hover:bg-blue-100" onClick={() => handleDateSelect('year', year)}>{year}</div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <button className="mt-6 w-full bg-[#00b7c0] text-white py-3 rounded-lg">
-                                    Lưu
+                                <button className="mt-4 text-sm text-blue-500 font-semibold">
+                                    Thay đổi ảnh đại diện
                                 </button>
                             </div>
 
-                            {/* Avatar Section */}
-                            <div className="flex flex-col items-center space-y-6">
-                                <div className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <span className="text-gray-400 text-6xl">👤</span>
+                            {/* Information Section */}
+                            <div className="flex-grow">
+                                <div className="grid grid-cols-2 gap-6">
+                                    {/* Left Section */}
+                                    <div>
+                                        {/* Full Name */}
+                                        <div className="flex items-center mb-4">
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Họ & Tên:</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    name="fullName"
+                                                    value={userInfo.fullName}
+                                                    onChange={handleChange}
+                                                    className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow"
+                                                />
+                                            ) : (
+                                                <span className="text-gray-900 text-lg flex-grow">
+                                                    {userInfo.fullName || 'Chưa cập nhật'}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Email */}
+                                        <div className="flex items-center">
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Email:</label>
+                                            <span className="text-gray-900 text-lg flex-grow">
+                                                {userInfo.email
+                                                    ? `*****${userInfo.email.slice(userInfo.email.indexOf('@') - 3)}`
+                                                    : 'Chưa cập nhật'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+
+                                    {/* Right Section */}
+                                    <div>
+                                        {/* Address */}
+                                        <div className="flex items-center mb-4">
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Địa chỉ:</label>
+                                            <span className="text-gray-900 text-lg flex-grow">
+                                                {userInfo.address || 'Chưa cập nhật'}
+                                            </span>
+                                            <button
+                                                onClick={() => handleUpdateField('address')}
+                                                className="text-blue-500 text-sm font-semibold ml-2"
+                                            >
+                                                Cập nhật
+                                            </button>
+                                        </div>
+
+                                        {/* Phone Number */}
+                                        <div className="flex items-center">
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Số điện thoại:</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    name="phone"
+                                                    value={userInfo.phone}
+                                                    onChange={handleChange}
+                                                    className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow"
+                                                />
+                                            ) : (
+                                                <span className="text-gray-900 text-lg flex-grow">
+                                                    {userInfo.phone ? `****${userInfo.phone.slice(-3)}` : 'Chưa cập nhật'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <button className="bg-blue-500 text-white py-2 px-6 rounded-lg bg-blue-600">
-                                    Thay Đổi
-                                </button>
+
+                                {/* Buttons */}
+                                {isEditing ? (
+                                    <div className="flex space-x-4 mt-6">
+                                        <button
+                                            onClick={handleCancelClick}
+                                            className="w-full bg-gray-300 text-gray-700 py-3 rounded-lg"
+                                        >
+                                            Hủy
+                                        </button>
+                                        <button
+                                            onClick={handleSaveClick}
+                                            className="w-full bg-blue-500 text-white py-3 rounded-lg"
+                                        >
+                                            Lưu
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={handleEditClick}
+                                        className="mt-6 w-[150px] bg-blue-500 text-white py-3 rounded-lg"
+                                    >
+                                        Chỉnh sửa
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
 
             {showChangePassword && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -229,9 +314,6 @@ export function Account() {
                 </div>
             )}
             <Footer />
-        </>
+        </div>
     );
-
 }
-
-export default Account;

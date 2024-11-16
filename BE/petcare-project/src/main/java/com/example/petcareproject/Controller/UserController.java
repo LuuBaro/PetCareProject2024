@@ -4,6 +4,7 @@ import com.example.petcareproject.Model.Role;
 import com.example.petcareproject.Model.User;
 import com.example.petcareproject.Services.RoleService;
 import com.example.petcareproject.Services.UserService;
+import com.example.petcareproject.dto.UserUpdateDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,4 +84,17 @@ public class UserController {
         }
         return ResponseEntity.notFound().build();
     }
+
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserUpdateDTO updateUserRequest) {
+
+        // Update the user with the new data
+        User updatedUser = userService.updateUser(id, updateUserRequest);
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
 }

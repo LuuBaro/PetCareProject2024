@@ -29,7 +29,8 @@ export function Login() {
         localStorage.setItem("userRole", data.roleName); // Save user role
         localStorage.setItem("isAuthenticated", "true"); // Set authenticated status
         localStorage.setItem("fullName", data.fullName); // Lưu fullName vào localStorage
-
+        localStorage.setItem("phone", data.phone);
+        localStorage.setItem("email", data.email);
         console.log(data);
 
         Swal.fire({
@@ -72,7 +73,7 @@ export function Login() {
     e.preventDefault();
     handleLogin();
   };
-  
+
   // Hàm xử lý đăng nhập bằng Google
   const handleGoogleLogin = async (response) => {
     if (response && response.credential) {
@@ -95,6 +96,7 @@ export function Login() {
           localStorage.setItem("userRole", data.roleName);
           localStorage.setItem("isAuthenticated", "true");
           localStorage.setItem("fullName", data.fullName);
+          localStorage.setItem("email", data.email);
 
           Swal.fire({
             title: "Đăng nhập thành công!",
@@ -165,6 +167,8 @@ export function Login() {
             localStorage.setItem("userRole", data.roleName);
             localStorage.setItem("isAuthenticated", "true");
             localStorage.setItem("fullName", data.fullName);
+            localStorage.setItem("email", data.email);
+            console.log(data.email);
             console.log("User Role: " + data.roleName);
             Swal.fire({
               title: "Đăng nhập thành công!",

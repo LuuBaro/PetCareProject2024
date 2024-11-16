@@ -6,6 +6,7 @@ import com.example.petcareproject.Model.UserRole;
 import com.example.petcareproject.Repository.RoleRepository;
 import com.example.petcareproject.Repository.UserRepository;
 import com.example.petcareproject.Repository.UserRoleRepository;
+import com.example.petcareproject.dto.UserUpdateDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -56,6 +57,20 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(user.getPassword())); // Mã hóa mật khẩu trước khi lưu
         userRepository.save(user);
     }
+
+    public User updateUser(Long userId, UserUpdateDTO updateUserRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Update user data
+        user.setFullName(updateUserRequest.getFullName());
+        user.setPhone(updateUserRequest.getPhone());
+        user.setEmail(updateUserRequest.getEmail());
+
+        // Save the updated user to the database
+        return userRepository.save(user);
+    }
+
 
     public List<User> getAllUsers() {
         return userRepository.findAll(); // Lấy tất cả người dùng
