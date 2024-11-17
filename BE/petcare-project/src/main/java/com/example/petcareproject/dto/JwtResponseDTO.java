@@ -15,4 +15,6 @@ public class JwtResponseDTO {
     private String fullName; // Add this field
     private String roleName;
     private String errorMessage; // Trường mới để chứa thông tin lỗi
+    private String phone;
+    private String email;
 }

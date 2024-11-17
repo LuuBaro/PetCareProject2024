@@ -79,6 +79,8 @@ public class AuthController {
                 .userId(user.getUserId()) // Chuyển đổi userId từ long sang String
                 .fullName(String.valueOf(user.getFullName())) // Ép kiểu fullName về String
                 .roleName(userService.getUserRole(user))
+                .phone(user.getPhone())
+                .email(user.getEmail())
                 .build();
 
     }
@@ -133,6 +135,7 @@ public class AuthController {
                         .userId(user.getUserId()) // Chuyển đổi userId từ long sang String
                         .fullName(user.getFullName())
                         .roleName(userService.getUserRole(user)) // Lấy vai trò của user, nếu có
+                        .email(user.getEmail())
                         .build();
 
                 return ResponseEntity.ok(response);
@@ -182,6 +185,7 @@ public class AuthController {
                 user.setFullName(fullName);
                 user.setPassword(""); // Không cần mật khẩu cho Facebook
                 userService.saveUser(user); // Lưu thông tin người dùng mới vào database
+
             }
 
             // Tạo JWT token
@@ -192,6 +196,7 @@ public class AuthController {
                     .userId(user.getUserId())
                     .fullName(user.getFullName())
                     .roleName(userService.getUserRole(user))
+                    .email(user.getEmail())
                     .build();
 
             return ResponseEntity.ok(response);
@@ -205,15 +210,6 @@ public class AuthController {
                     .body(Map.of("error", "Internal server error", "details", e.getMessage()));
         }
     }
-
-
-
-
-
-
-
-
-
 
 
 }
