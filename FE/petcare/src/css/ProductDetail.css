@@ -1,0 +1,222 @@
+/* Tổng thể container */
+.product-detail-container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background-color: #f8f9fa;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Thẻ sản phẩm */
+.product-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 100%;
+    transition: 0.3s ease-in-out;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Phần hình ảnh sản phẩm */
+.product-image-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.product-image {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+}
+
+.product-image:hover {
+    transform: scale(1.05);
+}
+
+.image-thumbnails {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.image-thumbnails img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+}
+
+.image-thumbnails img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Phần thông tin sản phẩm */
+.product-info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.product-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+    text-transform: capitalize;
+}
+
+.product-price {
+    font-size: 22px;
+    color: #e60023;
+    font-weight: 600;
+    margin: 15px 0;
+}
+
+.product-discount {
+    font-size: 16px;
+    color: #888;
+    text-decoration: line-through;
+}
+
+/* Các lựa chọn sản phẩm */
+.product-options h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.option-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.option-button {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    background: #f9f9f9;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s, border 0.3s, transform 0.2s;
+}
+
+.option-button:hover {
+    background: #007bff;
+    color: #fff;
+    border: 1px solid #007bff;
+    transform: translateY(-2px);
+}
+
+.option-button.active {
+    background: #007bff;
+    color: #fff;
+    border: 2px solid #0056b3;
+}
+
+.option-button.disabled {
+    background: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Bộ chọn số lượng */
+.quantity-selector {
+    margin: 25px 0;
+}
+
+.quantity-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quantity-buttons button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background: #007bff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s, transform 0.2s;
+}
+
+.quantity-buttons button:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+.quantity-buttons input {
+    width: 60px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    background: #f9f9f9;
+}
+
+/* Nút hành động */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.buy-now-button,
+.add-to-cart-button {
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s ease-in-out;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+.buy-now-button {
+    background: #e60023;
+    color: #fff;
+}
+
+.buy-now-button:hover {
+    background: #b0001c;
+}
+
+.add-to-cart-button {
+    background: #007bff;
+    color: #fff;
+}
+
+.add-to-cart-button:hover {
+    background: #0056b3;
+}
