@@ -46,4 +46,9 @@ public class ProductDetailService {
     public void updateQuantity(Long productId, int newQuantity) {
         productDetailRepository.updateProductDetailQuantity(productId, newQuantity);
     }
+
+
+    public List<ProductDetail> getProductDetailsByProductId(Long productId) {
+        return productDetailRepository.findAllByProductId(productId);
+    }
 }
