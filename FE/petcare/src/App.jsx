@@ -57,7 +57,7 @@ function App() {
           }
         />
         
-        <Route path="/product/:id" element={<ProductDetail />} /> {/* Ensure this route matches */}
+        <Route path="/ProductDetail/by-product/:id" element={<ProductDetail />} /> {/* Ensure this route matches */}
         <Route
           path="/manageproduct"
           element={
