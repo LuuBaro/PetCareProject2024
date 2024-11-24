@@ -14,6 +14,8 @@ const AddressForm: React.FC<AddressFormProps> = ({onSubmit, onCancel, userId}) =
     const [selectedProvince, setSelectedProvince] = useState<string>('');
     const [selectedDistrict, setSelectedDistrict] = useState<string>('');
     const [formData, setFormData] = useState({
+        name: '', // Thêm họ và tên
+        phone: '', // Thêm số điện thoại
         ward: '',
         address: '',
         isDefault: false
@@ -39,13 +41,14 @@ const AddressForm: React.FC<AddressFormProps> = ({onSubmit, onCancel, userId}) =
         const selectedWardObj = wards.find(w => w.WardCode === formData.ward);
 
         const addressData = {
-            fullAddress: `${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
+            fullAddress: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
             street: formData.address,
             province: selectedProvince,
             district: selectedDistrictObj ? selectedDistrictObj.DistrictName : '',
             ward: selectedWardObj ? selectedWardObj.WardName : '',
-            userId: {id: userId}
+            userId: { id: userId }
         };
+
 
         try {
             const result = await addAddress(addressData);
@@ -129,6 +132,38 @@ const AddressForm: React.FC<AddressFormProps> = ({onSubmit, onCancel, userId}) =
 
     return (
         <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow-md">
+            {/* Input Họ và Tên */}
+            <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Họ và Tên:
+                </label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    required
+                />
+            </div>
+
+            {/* Input Số điện thoại */}
+            <div className="mb-4">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    Số điện thoại:
+                </label>
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    required
+                />
+            </div>
+
             <div className="mb-4">
                 <label htmlFor="province" className="block text-sm font-medium text-gray-700">
                     Tỉnh/Thành phố:

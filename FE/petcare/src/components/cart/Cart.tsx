@@ -6,11 +6,15 @@ import toastr from "toastr";
 
 interface Product {
   cartDetailId: number;
+  productDetailId: number; // Thêm productDetailId
   productId: number;
   image: string;
   productName: string;
   price: number;
   quantity: number;
+  color: string;  // Thêm màu sắc
+  weight: number; // Thêm cân nặng
+  size: string; // Thêm kích thước
 }
 
 const Cart: React.FC = () => {
@@ -38,13 +42,17 @@ const Cart: React.FC = () => {
 
       const productsData = cartItems.map((item: any) => ({
         cartDetailId: item.cartDetailId,
+        productDetailId: item.productDetail.productDetailId, // Lấy productDetailId
         productId: item.productDetail.product.productId,
         image: item.productDetail.product.imageUrl,
         productName: item.productDetail.product.productName,
         price: item.productDetail.price,
         quantity: item.quantityItem,
+        color: item.productDetail.productColor?.color || 'Màu không xác định', // Sửa lại truy xuất đúng tên
+        weight: item.productDetail.productWeight?.weightValue || 'Cân nặng không xác định', // Cũng cần kiểm tra đúng tên cho cân nặng
+        size: item.productDetail.productSize?.productSize || 'Kích thước không xác định', // Lấy size sản phẩm
       }));
-
+      console.log("Products Data:", productsData); // Log ra danh sách productsData đã được tạo
       setProducts(productsData);
     } catch (error) {
       setError("Đã xảy ra lỗi khi tải giỏ hàng.");
@@ -86,8 +94,8 @@ const Cart: React.FC = () => {
     console.log("userId:", userId);
 
     // Tìm sản phẩm tương ứng trong giỏ hàng
-    const product = products.find(product => product.cartDetailId === cartDetailId);
-    const productDetailId = product ? product.productId : null; // Lấy productDetailId từ sản phẩm
+    const cartProduct = products.find(product => product.cartDetailId === cartDetailId);
+    const productDetailId = cartProduct ? cartProduct.productDetailId : null; // Lấy productDetailId từ sản phẩm
 
     if (!productDetailId) {
       console.error("ProductDetailId is missing!");
@@ -95,19 +103,19 @@ const Cart: React.FC = () => {
     }
 
     // Lấy thông tin ProductDetail từ backend hoặc từ state nếu đã có
-    // Giả sử bạn có một hàm để lấy ProductDetail
-    const productDetailResponse = await axios.get(`http://localhost:8080/api/product-details/${productDetailId}`);
-    const productDetail = productDetailResponse.data;
-
-    const stockAvailable = productDetail ? productDetail.quantity : 0; // Lấy số lượng sản phẩm có sẵn từ ProductDetail
-
-    // Kiểm tra số lượng muốn cập nhật không được vượt quá số lượng có sẵn
-    if (quantityItem > stockAvailable) {
-      toastr.error(`Số lượng không được vượt quá ${stockAvailable}.`); // Thông báo lỗi
-      return; // Không thực hiện cập nhật nếu vượt quá số lượng có sẵn
-    }
-
     try {
+      const productDetailResponse = await axios.get(`http://localhost:8080/api/product-details/${productDetailId}`);
+      const productDetail = productDetailResponse.data;
+
+      const stockAvailable = productDetail ? productDetail.quantity : 0; // Lấy số lượng sản phẩm có sẵn từ ProductDetail
+
+      // Kiểm tra số lượng muốn cập nhật không được vượt quá số lượng có sẵn
+      if (quantityItem > stockAvailable) {
+        toastr.error(`Số lượng không được vượt quá ${stockAvailable}.`); // Thông báo lỗi
+        return; // Không thực hiện cập nhật nếu vượt quá số lượng có sẵn
+      }
+
+      // Gửi request cập nhật số lượng vào giỏ hàng
       const response = await axios.put(
           `http://localhost:8080/api/cart/update`,
           {
@@ -133,6 +141,7 @@ const Cart: React.FC = () => {
       console.error("Error updating quantity:", error.response ? error.response.data : error.message);
     }
   };
+
 
   // useEffect(() => {
   //   const updateCartItems = async () => {
@@ -209,76 +218,87 @@ const Cart: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <table className="min-w-full table-auto border-collapse border-2 border-[#F2BC27]">
-              <thead>
+            <div className="space-y-4">
+              <table className="min-w-full table-auto border-collapse border-2 border-[#F2BC27]">
+                <thead>
                 <tr className="border-b-2 border-[#F2BC27]">
                   <th className="px-6 py-4 text-left">Xóa</th>
                   <th className="px-6 py-4 text-left">Sản phẩm</th>
+                  <th className="px-6 py-4 text-left">Màu sắc</th>
+                  {/* Cột Màu sắc */}
+                  <th className="px-6 py-4 text-left">Cân nặng (kg)</th>
+                  {/* Cột Cân nặng */}
                   <th className="px-6 py-4 text-left">Giá</th>
                   <th className="px-6 py-4 text-left">Số lượng</th>
+                  <th className="px-6 py-4 text-left">Kích thước</th>
+                  {/* Thêm cột Kích thước */}
                   <th className="px-6 py-4 text-left">Thành tiền</th>
                 </tr>
-              </thead>
-              <tbody>
+                </thead>
+                <tbody>
                 {products.map((product) => {
                   const totalPrice = product.price * product.quantity;
                   return (
-                    <tr
-                      key={product.cartDetailId}
-                      className="border-b transition-opacity duration-300"
-                    >
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleRemoveItem(product.cartDetailId)}
-                          className="text-red-500 text-xl hover:text-red-700 transition duration-300 bg-white p-1 rounded-full"
-                        >
-                          &times;
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 flex items-center">
-                        <img
-                          src={product.image}
-                          alt={product.productName}
-                          className="w-16 h-16 object-cover rounded-lg mr-4"
-                        />
-                        {product.productName}
-                      </td>
-                      <td className="px-6 py-4">
-                        {formatPrice(product.price)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="number"
-                          min="1"
-                          value={product.quantity}
-                          onChange={(e) =>
-                            handleQuantityChange(
-                              product.cartDetailId,
-                              parseInt(e.target.value)
-                            )
-                          }
-                          className="border border-gray-300 rounded-lg w-16 p-2 text-center"
-                        />
-                      </td>
-                      <td className="px-6 py-4">{formatPrice(totalPrice)}</td>
-                    </tr>
+                      <tr
+                          key={product.cartDetailId}
+                          className="border-b transition-opacity duration-300"
+                      >
+                        <td className="px-6 py-4">
+                          <button
+                              onClick={() => handleRemoveItem(product.cartDetailId)}
+                              className="text-red-500 text-xl hover:text-red-700 transition duration-300 bg-white p-1 rounded-full"
+                          >
+                            &times;
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 flex items-center">
+                          <img
+                              src={product.image}
+                              alt={product.productName}
+                              className="w-16 h-16 object-cover rounded-lg mr-4"
+                          />
+                          {product.productName}
+                        </td>
+                        <td className="px-6 py-4">{product.color}</td>
+                        {/* Hiển thị màu sắc */}
+                        <td className="px-6 py-4">{product.weight} Kg</td>
+                        {/* Hiển thị cân nặng */}
+                        <td className="px-6 py-4">{formatPrice(product.price)}</td>
+                        <td className="px-6 py-4">
+                          <input
+                              type="number"
+                              min="1"
+                              value={product.quantity}
+                              onChange={(e) =>
+                                  handleQuantityChange(
+                                      product.cartDetailId,
+                                      parseInt(e.target.value)
+                                  )
+                              }
+                              className="border border-gray-300 rounded-lg w-16 p-2 text-center"
+                          />
+                        </td>
+                        <td className="px-6 py-4">{product.size}</td>
+                        {/* Thêm cột Kích thước */}
+                        <td className="px-6 py-4">{formatPrice(totalPrice)}</td>
+                      </tr>
                   );
                 })}
-              </tbody>
-            </table>
-            <div className="mt-6 text-right">
-              <h2 className="text-xl font-bold">
-                Tổng cộng: {formatPrice(calculateTotal())}
-              </h2>
-              <button
-                onClick={handleCheckout}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition duration-300 mt-4"
-              >
-                Thanh toán
-              </button>
+                </tbody>
+              </table>
+
+              <div className="mt-6 text-right">
+                <h2 className="text-xl font-bold">
+                  Tổng cộng: {formatPrice(calculateTotal())}
+                </h2>
+                <button
+                    onClick={handleCheckout}
+                    className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition duration-300 mt-4"
+                >
+                  Thanh toán
+                </button>
+              </div>
             </div>
-          </div>
         )}
       </div>
     </>

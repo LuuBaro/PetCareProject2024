@@ -84,9 +84,9 @@ const SidebarMenu = () => {
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
                                     <Link to="/product-size" className="w-full">Quản lý kích thước</Link>
                                 </li>
-                                {/*<li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">*/}
-                                {/*    <Link to="/product-weights" className="w-full">Quản lý cân nặng</Link>*/}
-                                {/*</li>*/}
+                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
+                                    <Link to="/product-weights" className="w-full">Quản lý cân nặng</Link>
+                                </li>
                                 <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
                                     <Link to="/product-categories" className="w-full">Quản lý loại</Link>
                                 </li>
