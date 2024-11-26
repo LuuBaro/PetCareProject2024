@@ -18,7 +18,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -79,6 +78,24 @@ public class UserService implements UserDetailsService {
         // Save the updated user to the database
         return userRepository.save(user);
     }
+
+
+//     Phương thức kiểm tra email tồn tại trong hệ thống
+    public boolean checkIfEmailExists(String email) {
+        User user = userRepository.findByEmail(email);
+        return user != null;  // Kiểm tra nếu user khác null, có nghĩa là email tồn tại
+    }
+
+    public void changePassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword)); // Mã hóa mật khẩu mới
+        userRepository.save(user); // Lưu lại thay đổi
+    }
+
+
+
 
     public List<User> getAllUsers() {
         return userRepository.findAll(); // Lấy tất cả người dùng

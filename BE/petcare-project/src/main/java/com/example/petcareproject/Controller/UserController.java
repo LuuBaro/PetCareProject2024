@@ -98,6 +98,7 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
         try {
@@ -107,5 +108,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
 }
