@@ -6,8 +6,13 @@ import com.example.petcareproject.Model.UserRole;
 import com.example.petcareproject.Repository.RoleRepository;
 import com.example.petcareproject.Repository.UserRepository;
 import com.example.petcareproject.Repository.UserRoleRepository;
+import com.example.petcareproject.dto.ChangePasswordRequest;
 import com.example.petcareproject.dto.UserUpdateDTO;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -23,6 +29,9 @@ public class UserService implements UserDetailsService {
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     public UserService(UserRepository userRepository, UserRoleRepository userRoleRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
@@ -70,6 +79,7 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+
 //     Phương thức kiểm tra email tồn tại trong hệ thống
     public boolean checkIfEmailExists(String email) {
         User user = userRepository.findByEmail(email);
@@ -83,6 +93,8 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(newPassword)); // Mã hóa mật khẩu mới
         userRepository.save(user); // Lưu lại thay đổi
     }
+
+
 
 
     public List<User> getAllUsers() {
@@ -120,4 +132,68 @@ public class UserService implements UserDetailsService {
     public User findById(Long id) {
         return userRepository.findById(id).orElse(null); // Tìm người dùng theo ID
     }
+
+    public void changePassword(ChangePasswordRequest request) {
+        User user = userRepository.findById(Long.parseLong(request.getUserId()))
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không chính xác");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu mới không được giống với mật khẩu hiện tại");
+        }
+
+        String encryptedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.setPassword(encryptedPassword);
+        userRepository.save(user);
+
+        // Gửi email trong background (không cần chờ)
+        CompletableFuture.runAsync(() -> sendPasswordChangeNotification(user.getEmail(), user.getFullName()));
+
+        // Trả về ngay sau khi lưu
+    }
+
+    @Async
+    public void sendPasswordChangeNotification(String userEmail, String userName) {
+        MimeMessage message = emailService.createMimeMessage();
+
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(userEmail);
+            helper.setSubject("Thông Báo Thay Đổi Mật Khẩu từ PetCare");
+
+            // Sử dụng template email
+            String emailContent = generatePasswordChangeEmailContent(userName);
+            helper.setText(emailContent, true); // true để nội dung HTML được render
+            emailService.send(message);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
+    private String generatePasswordChangeEmailContent(String userName) {
+        // Dùng StringBuilder hoặc một công cụ template để xây dựng nội dung
+        return new StringBuilder()
+                .append("<div style='background-color: #f4f4f4; padding: 20px;'>")
+                .append("<div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);'>")
+                .append("<div style='background-color: #00b7c0; padding: 15px; text-align: center;'>")
+                .append("<h1 style='color: #ffffff; font-family: Arial, sans-serif;'>PetCare</h1>")
+                .append("</div>")
+                .append("<div style='padding: 20px; font-family: Arial, sans-serif;'>")
+                .append("<h2>Kính gửi Quý khách ").append(userName).append(",</h2>")
+                .append("<p>Chúng tôi xin thông báo rằng mật khẩu của tài khoản của Quý khách đã được thay đổi thành công.</p>")
+                .append("<p>Nếu Quý khách không thực hiện thay đổi này, vui lòng nhấp vào liên kết dưới đây để đặt lại mật khẩu:</p>")
+                .append("<a href='https://petcare.com/reset-password' style='display: inline-block; background-color: #00b7c0; color: #ffffff; padding: 10px 20px; border-radius: 5px; text-decoration: none;'>Đặt lại mật khẩu</a>")
+                .append("<p>Nếu liên kết trên không hoạt động, vui lòng sao chép và dán URL sau vào trình duyệt:</p>")
+                .append("<p>https://petcare.com/reset-password</p>")
+                .append("<p>Trân trọng,<br>PetCare<br>Thành phố Cần Thơ<br>Hotline: 0987654321</p>")
+                .append("</div>")
+                .append("</div>")
+                .append("</div>")
+                .toString();
+    }
+
+
 }
