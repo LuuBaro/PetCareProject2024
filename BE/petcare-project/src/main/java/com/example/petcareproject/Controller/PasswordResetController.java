@@ -51,19 +51,37 @@ public class PasswordResetController {
             String resetLink = "http://localhost:5173/reset-password?token=" + resetToken;
 
             // Send email with the reset link
-            emailService.sendEmail(
-                    email,
-                    "Reset Your Password",
-                    "<p>Hello,</p>" +
-                            "<p>Click the link below to reset your password:</p>" +
-                            "<a href='" + resetLink + "'>Reset Password</a>"
-            );
+            String emailContent = generateForgotPasswordEmailContent(email, resetLink);
+            emailService.sendEmail(email, "Yêu Cầu Đặt Lại Mật Khẩu từ PetCare", emailContent);
 
             return ResponseEntity.ok("Reset password link sent to your email");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send email");
         }
     }
+
+    private String generateForgotPasswordEmailContent(String userName, String resetLink) {
+        return new StringBuilder()
+                .append("<div style='background-color: #f4f4f4; padding: 20px;'>")
+                .append("<div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);'>")
+                .append("<div style='background-color: #00b7c0; padding: 15px; text-align: center;'>")
+                .append("<h1 style='color: #ffffff; font-family: Arial, sans-serif;'>PetCare</h1>")
+                .append("</div>")
+                .append("<div style='padding: 20px; font-family: Arial, sans-serif;'>")
+                .append("<h2>Kính gửi Quý khách ").append(userName).append(",</h2>")
+                .append("<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu từ tài khoản của Quý khách.</p>")
+                .append("<p>Vui lòng nhấp vào liên kết dưới đây để đặt lại mật khẩu:</p>")
+                .append("<a href='").append(resetLink).append("' style='display: inline-block; background-color: #00b7c0; color: #ffffff; padding: 10px 20px; border-radius: 5px; text-decoration: none;'>Đặt lại mật khẩu</a>")
+                .append("<p>Nếu liên kết trên không hoạt động, vui lòng sao chép và dán URL sau vào trình duyệt:</p>")
+                .append("<p>").append(resetLink).append("</p>")
+                .append("<p>Nếu Quý khách không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>")
+                .append("<p>Trân trọng,<br>PetCare<br>Thành phố Cần Thơ<br>Hotline: 0987654321</p>")
+                .append("</div>")
+                .append("</div>")
+                .append("</div>")
+                .toString();
+    }
+
 
     // Endpoint to reset the password
     @PostMapping("/reset-sendmailpassword")
