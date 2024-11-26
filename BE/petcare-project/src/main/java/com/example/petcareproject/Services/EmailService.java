@@ -3,6 +3,7 @@ package com.example.petcareproject.Services;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    @Lazy
     private final UserService userService;
 
     @Autowired
@@ -19,6 +21,7 @@ public class EmailService {
         this.mailSender = mailSender;
         this.userService = userService;
     }
+
 
     public void send(MimeMessage message) throws MessagingException {
         mailSender.send(message);

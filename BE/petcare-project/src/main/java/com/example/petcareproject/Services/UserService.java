@@ -11,6 +11,7 @@ import com.example.petcareproject.dto.UserUpdateDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,7 +31,9 @@ public class UserService implements UserDetailsService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     @Autowired
+    @Lazy
     private EmailService emailService;
 
     @Autowired
