@@ -10,6 +10,9 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [passwordShown, setPasswordShown] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isForgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   const togglePasswordVisiblity = () => setPasswordShown((cur) => !cur);
@@ -73,6 +76,56 @@ export function Login() {
     e.preventDefault();
     handleLogin();
   };
+
+  const handleForgotPasswordSubmit = async () => {
+    localStorage.removeItem("token"); // Xóa token khi logout
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("fullName");
+    localStorage.removeItem("phone");
+    localStorage.removeItem("email");
+    setIsAuthenticated(false);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/sendemail-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      });
+  
+      if (response.ok) {
+        Swal.fire({
+          title: "Thành công!",
+          text: "Hướng dẫn đặt lại mật khẩu đã được gửi qua email.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+        setForgotPasswordModalOpen(false);
+      } else {
+        const errorData = await response.json();
+  
+        // Kiểm tra xem thông báo lỗi có phải là "Email không tồn tại"
+        if (errorData.message && errorData.message === "Email không tồn tại") {
+          setErrorMessage("Email không tồn tại. Vui lòng kiểm tra lại.");
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Thất bại!",
+            text: errorData.message || "Không thể gửi email khôi phục.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error during forgot password:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi!",
+        text: "Email không tồn tại. Vui lòng kiểm tra lại.",
+      });
+    }
+  };
+  
+
 
   // Hàm xử lý đăng nhập bằng Google
   const handleGoogleLogin = async (response) => {
@@ -330,11 +383,10 @@ export function Login() {
           </Button>
           <div className="!mt-4 flex justify-end">
             <Typography
-              as="a"
-              href="#"
+              as="button"
               color="blue-gray"
               variant="small"
-              className="font-medium"
+              onClick={() => setForgotPasswordModalOpen(true)} // Open modal
             >
               Quên mật khẩu?
             </Typography>
@@ -381,6 +433,43 @@ export function Login() {
           </Typography>
         </form>
       </div>
+
+
+      {/* Modal Quên mật khẩu */}
+
+      {isForgotPasswordModalOpen && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-md shadow-lg max-w-md w-full">
+            <Typography variant="h5" className="mb-4">
+              Quên mật khẩu
+            </Typography>
+            {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>} {/* Display error message */}
+            <Input
+              color="gray"
+              size="lg"
+              type="email"
+              placeholder="Nhập email của bạn"
+              value={forgotPasswordEmail}
+              onChange={(e) => setForgotPasswordEmail(e.target.value)}
+              required
+            />
+            <div className="flex justify-end gap-4 mt-6">
+              <Button
+                color="gray"
+                variant="text"
+                onClick={() => setForgotPasswordModalOpen(false)} // Close modal
+              >
+                Hủy
+              </Button>
+              <Button color="gray" onClick={handleForgotPasswordSubmit}>
+                Gửi yêu cầu
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </section>
   );
 }

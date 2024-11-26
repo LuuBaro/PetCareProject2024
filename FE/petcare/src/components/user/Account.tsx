@@ -13,6 +13,8 @@ export function Account() {
         phone: localStorage.getItem('phone'),
     });
 
+    
+
     const closeModal = () => setShowChangePassword(false);
 
     const handleEditClick = () => {
