@@ -27,21 +27,36 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
+  const [stockAvailable, setStockAvailable] = useState(0);
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
         const response = await ProductDetailService.getAllProductDetailsByProductId(productId);
+        console.log("Product details response:", response); // Kiểm tra toàn bộ response
+
         const colorsResponse = await ProductColorService.getAllProductColors();
         const sizesResponse = await ProductSizeService.getAllProductSizes();
         const weightsResponse = await ProductWeightService.getAllProductWeights();
 
-        setProductDetails(response || []);
+        // Kiểm tra xem response có chứa bất kỳ phần tử nào hay không
+        if (response && response.length > 0) {
+          // Duyệt qua tất cả các phần tử trong response để lấy quantity
+          const allQuantities = response.map((detail) => detail.quantity);
+          console.log("All quantities:", allQuantities); // In ra tất cả các quantity
+
+          // Lưu tất cả giá trị quantity vào state (nếu cần thiết)
+          setStockAvailable(allQuantities);
+
+          setProductDetails(response || []);
+          setCurrentDetail(response[0]); // Giả sử response[0] có chứa stockAvailable
+        } else {
+          toastr.error("Không tìm thấy thông tin chi tiết sản phẩm.");
+        }
+
         setColors(colorsResponse || []);
         setSizes(sizesResponse || []);
         setWeights(weightsResponse || []);
-        setCurrentDetail(response[0]); // Default to the first detail
       } catch (error) {
         setError(error.message || "Error loading product details.");
         toastr.error(error.message);
@@ -52,6 +67,8 @@ const ProductDetail = () => {
 
     fetchProductDetails();
   }, [productId]);
+
+
 
   // Handle selection and update current detail
   const handleSelection = (type, value) => {
@@ -97,21 +114,80 @@ const ProductDetail = () => {
     setQuantity((prev) => (action === "increment" ? prev + 1 : Math.max(prev - 1, 1)));
   };
 
-  const handleAddToCart = () => {
-    if (currentDetail) {
-      const productToAdd = {
-        productDetailId: currentDetail.productDetailId,
-        color: selectedColor,
-        size: selectedSize,
-        weight: selectedWeight,
-        quantity,
-      };
-      console.log("Product added to cart:", productToAdd);
-      toastr.success("Product added to cart!");
-    } else {
-      toastr.error("No product detail selected.");
+  // const getProductQuantityInCart = async (productDetailId) => {
+  //   try {
+  //     const cartItems = await CartService.getCartItems(localStorage.getItem("userId"));
+  //     const item = cartItems.find((cartItem) => cartItem.productDetailId === productDetailId);
+  //     return item ? item.quantity : 0; // Trả về số lượng hiện tại hoặc 0 nếu chưa có trong giỏ
+  //   } catch (error) {
+  //     console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
+  //     return 0;
+  //   }
+  // };
+
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+
+    // Kiểm tra người dùng đã đăng nhập hay chưa
+    if (!token) {
+      toastr.error("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      window.location.href = "/login";
+      return;
+    }
+
+    // Kiểm tra người dùng đã chọn đầy đủ các biến thể chưa
+    if (!currentDetail) {
+      toastr.error("Vui lòng chọn đầy đủ các biến thể sản phẩm.");
+      return;
+    }
+
+    // Kiểm tra số lượng có hợp lệ không
+    if (quantity <= 0) {
+      toastr.error("Vui lòng chọn số lượng hợp lệ.");
+      return;
+    }
+
+    try {
+      // Lấy thông tin tồn kho từ biến thể được chọn
+      const selectedStock = currentDetail?.quantity; // Lấy quantity từ currentDetail thay vì stockAvailable
+      console.log("selectedStock:", selectedStock);
+
+      // Kiểm tra xem stockAvailable có tồn tại không
+      if (selectedStock === undefined) {
+        toastr.error("Thông tin tồn kho không hợp lệ.");
+        return;
+      }
+
+      console.log("Stock available in handleAddToCart:", selectedStock); // Log giá trị tồn kho
+
+      // Gọi hàm addToCart với các tham số chi tiết hơn
+      const cartDetail = await CartService.addToCart(
+          currentDetail.productDetailId,         // productDetailId
+          quantity,                              // Số lượng cần thêm
+          localStorage.getItem("userId"),        // ID người dùng
+          token,                                  // Token xác thực
+          currentDetail.product.productName,     // Tên sản phẩm
+          selectedStock,                          // Số lượng tồn kho
+          selectedColor,                          // Màu sắc được chọn
+          selectedSize,                           // Kích thước được chọn
+          selectedWeight                          // Trọng lượng được chọn
+      );
+
+      // Nếu thành công, thông báo và cập nhật giỏ hàng
+      // if (cartDetail) {
+      //   toastr.success("Sản phẩm đã được thêm vào giỏ hàng!");
+      // }
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
+      toastr.error("Không thể thêm sản phẩm vào giỏ hàng.");
     }
   };
+
+
+
+
+
+
 
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;

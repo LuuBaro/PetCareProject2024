@@ -60,8 +60,9 @@ public class OrderService {
         }
 
         order.setShippingAddress(request.address);
-        order.setShippingCost(15000); // Phí vận chuyển
-        order.setTotalAmount(request.total + 15000); // Tổng tiền + phí vận chuyển
+        order.setShippingCost(request.shippingCost); // Nhận từ FE
+        order.setTotalAmount(request.total + request.shippingCost);
+
         order.setType(true);
         order.setPointEarned(0);
         order.setPointUsed(0);
@@ -115,6 +116,7 @@ public class OrderService {
         orderDetailDTO.setQuantity(orderDetail.getQuantity());
         orderDetailDTO.setPrice(orderDetail.getPrice());
         orderDetailDTO.setOrderId(orderDetail.getOrder().getOrderId());
+        orderDetailDTO.setProductBrand(orderDetail.getProductDetail().getProduct().getBrand().getBrandName());
 
         // Lấy thông tin sản phẩm
         ProductDetail productDetail = orderDetail.getProductDetail();
@@ -122,12 +124,15 @@ public class OrderService {
 
         // Thiết lập thông tin sản phẩm trong DTO
         orderDetailDTO.setProductId(product.getProductId());
+        orderDetailDTO.setProductDetailId(productDetail.getProductDetailId());
         orderDetailDTO.setProductName(product.getProductName());
         orderDetailDTO.setProductImage(product.getImageUrl());
         orderDetailDTO.setProductPrice(productDetail.getPrice());
         orderDetailDTO.setProductCategory(product.getCategory().getCategogyName());
         orderDetailDTO.setProductBrand(product.getBrand().getBrandName());
-
+        orderDetailDTO.setProductColor(productDetail.getProductColor().getColor());
+        orderDetailDTO.setProductSize(productDetail.getProductSize().getProductSize());
+        orderDetailDTO.setProductWeightvalue(productDetail.getProductWeight().getWeightValue());
         return orderDetailDTO;
     }
 
