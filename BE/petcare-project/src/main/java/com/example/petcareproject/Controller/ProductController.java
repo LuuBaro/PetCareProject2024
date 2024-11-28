@@ -1,6 +1,7 @@
 package com.example.petcareproject.Controller;
 
 import com.example.petcareproject.Model.Product;
+import com.example.petcareproject.Model.ProductCategogy;
 import com.example.petcareproject.Services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,17 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
+    }
+
+
+    @GetMapping("/category/{categoryId}")
+    public List<Product> getProductsByCategory(@PathVariable Long categoryId) {
+        // Create a new ProductCategogy object and set its ID
+        ProductCategogy category = new ProductCategogy();
+        category.setProductCategogyId(categoryId);  // Assuming ProductCategogy has a method setProductCategoryId
+
+        // Call the service method to get products by category
+        return productService.getProductsByCategory(category);
     }
 
 

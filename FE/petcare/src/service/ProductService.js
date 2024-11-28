@@ -49,6 +49,19 @@ class ProductService {
   getTopSellingProducts() {
     return axios.get(`${API_URL}/top-selling`); // API để lấy sản phẩm bán chạy nhất
 }
+
+  getProductsByCategory(categoryId) {
+    return axios.get(`${API_URL}/category/${categoryId}`)
+        .then(response => {
+          // Return the product list from the response
+          return response.data;
+        })
+        .catch(error => {
+          // Handle any errors that occur during the API call
+          console.error("There was an error fetching products by category:", error);
+          throw error; // You may want to handle this error further in your UI
+        });
+  }
 }
 
 export default new ProductService();

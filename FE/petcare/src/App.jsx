@@ -49,6 +49,7 @@ function App() {
         <Route path="/orderpage" element={<OrderPage />} />
         <Route path="/account" element={<Account />} />
         <Route path="/reset-password" element={<ForgotPassword />} />
+
         <Route
           path="/cart"
           element={
