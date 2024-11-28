@@ -4,12 +4,15 @@ import Footer from '../footer/Footer';
 import axios from 'axios';
 import Sidebar from "../user/Sidebar";
 import Swal from "sweetalert2";
+import {ref, uploadBytesResumable, getDownloadURL} from "firebase/storage";
+import {storage} from "../../config/firebaseConfig";
 import AccountInfo from "../user/accountTabs/AccountInfo";
 import ChangePassword from "../user/accountTabs/ChangePassword";
 import OrderHistory from "../user/accountTabs/Order";
 import Favorites from "../user/accountTabs/Favorites";
 
 export function Account() {
+    const [avatarUrl, setAvatarUrl] = useState("");
     const [activeTab, setActiveTab] = useState("account");
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -70,16 +73,25 @@ export function Account() {
         }
     };
 
-    const handleSaveClick = () => {
-        const updatedInfo = {
-            fullName: userInfo.fullName,
-            email: userInfo.email,
-            phone: userInfo.phone,
-        };
+    const handleSaveClick = async () => {
+        const userId = localStorage.getItem('userId'); // Lấy userId từ localStorage
+        const { email, ...updatedInfo } = userInfo; // Loại bỏ email nếu không cần gửi
 
-        const userId = localStorage.getItem('userId');
-        updateUser(userId, updatedInfo); // Call updateUser with the new data
-        setIsEditing(false); // Switch to view mode after saving
+        try {
+            // Gọi hàm updateUser để xử lý việc cập nhật user
+            await updateUser(userId, updatedInfo);
+
+            // Tắt chế độ chỉnh sửa
+            setIsEditing(false);
+
+            // Hiển thị thông báo thành công
+            Swal.fire("Thành công", "Lưu thông tin tài khoản thành công!", "success");
+        } catch (error) {
+            console.error("Error updating user:", error);
+
+            // Hiển thị thông báo lỗi
+            Swal.fire("Error", "Failed to update user info. Please try again!", "error");
+        }
     };
 
     const handleCancelClick = () => {
@@ -94,7 +106,10 @@ export function Account() {
 
     const handleChange = (e) => {
         const {name, value} = e.target;
-        setUserInfo((prev) => ({...prev, [name]: value}));
+        setUserInfo((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
     };
 
     const validateNewPassword = (password) => {
@@ -203,21 +218,78 @@ export function Account() {
         }
     };
 
+    const handleAvatarUpload = async (file) => {
+        if (!file) return;
+
+        try {
+            const storageRef = ref(storage, `avatars/${Date.now()}_${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            return new Promise((resolve, reject) => {
+                uploadTask.on(
+                    "state_changed",
+                    null,
+                    (error) => {
+                        console.error("Error uploading avatar:", error);
+                        Swal.fire("Error", "Failed to upload avatar. Please try again!", "error");
+                        reject(error);
+                    },
+                    async () => {
+                        try {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            setAvatarUrl(url);
+                            Swal.fire("Thành công", "Tải ảnh đại diện lên thành công!", "success");
+                            resolve(url);
+                        } catch (error) {
+                            console.error("Error getting avatar URL:", error);
+                            Swal.fire("Error", "Failed to get avatar URL. Please try again!", "error");
+                            reject(error);
+                        }
+                    }
+                );
+            });
+        } catch (error) {
+            console.error("Error in handleAvatarUpload:", error);
+        }
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case "account":
                 return (
                     <AccountInfo
+                        avatarUrl={avatarUrl}
+                        setAvatarUrl={setAvatarUrl}
                         userInfo={userInfo}
                         isEditing={isEditing}
                         onChange={handleChange}
                         onEdit={handleEditClick}
                         onSave={handleSaveClick}
                         onCancel={handleCancelClick}
+                        onAvatarUpload={handleAvatarUpload}
                     />
                 );
             case "changePassword":
-                return <ChangePassword/>;
+                return (
+                    <ChangePassword
+                        currentPassword={currentPassword}
+                        newPassword={newPassword}
+                        confirmPassword={confirmPassword}
+                        currentPasswordError={currentPasswordError}
+                        newPasswordError={newPasswordError}
+                        confirmPasswordError={confirmPasswordError}
+                        onChangeCurrentPassword={(e) => setCurrentPassword(e.target.value)}
+                        onChangeNewPassword={(e) => {
+                            setNewPassword(e.target.value);
+                            validateNewPassword(e.target.value);
+                        }}
+                        onChangeConfirmPassword={(e) => {
+                            setConfirmPassword(e.target.value);
+                            validateConfirmPassword(e.target.value);
+                        }}
+                        onSave={handleSave}
+                    />
+                );
             case "orderHistory":
                 return <OrderHistory/>;
             case "favorites":
@@ -232,9 +304,7 @@ export function Account() {
             <Header/>
 
             <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
-                <Sidebar
-                    setActiveTab={setActiveTab}
-                />
+                <Sidebar setActiveTab={setActiveTab} avatarUrl={avatarUrl} />
                 <div
                     className="w-3/4 pl-10 bg-gray-100"
                     style={{minHeight: '70vh', display: 'flex', flexDirection: 'column'}}

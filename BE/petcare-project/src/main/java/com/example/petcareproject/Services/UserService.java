@@ -10,6 +10,7 @@ import com.example.petcareproject.dto.ChangePasswordRequest;
 import com.example.petcareproject.dto.UserUpdateDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,15 +71,19 @@ public class UserService implements UserDetailsService {
 
     public User updateUser(Long userId, UserUpdateDTO updateUserRequest) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
-        // Update user data
-        user.setFullName(updateUserRequest.getFullName());
-        user.setPhone(updateUserRequest.getPhone());
-        user.setEmail(updateUserRequest.getEmail());
+        try {
+            // Update user data
+            user.setFullName(updateUserRequest.getFullName());
+            user.setPhone(updateUserRequest.getPhone());
+            user.setEmail(updateUserRequest.getEmail());
 
-        // Save the updated user to the database
-        return userRepository.save(user);
+            // Save the updated user to the database
+            return userRepository.save(user);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error updating user with ID: " + userId, ex);
+        }
     }
 
     public List<User> getAllUsers() {
@@ -177,6 +183,4 @@ public class UserService implements UserDetailsService {
                 .append("</div>")
                 .toString();
     }
-
-
 }

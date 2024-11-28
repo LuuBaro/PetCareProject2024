@@ -10,12 +10,16 @@ import {
     FaHeadset,
 } from "react-icons/fa";
 
-const Sidebar = ({setActiveTab }) => {
+const Sidebar = ({ setActiveTab, avatarUrl }) => {
     return (
         <div className="w-1/4 pr-8 bg-gray-300 p-6">
             <div className="w-full flex items-center mb-6">
                 <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-400 text-4xl">👤</span>
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover"/>
+                    ) : (
+                        <span className="text-gray-400 text-4xl">👤</span>
+                    )}
                 </div>
                 <div className="flex flex-col justify-center ml-4">
                     <h3 className="text-sm font-semibold text-gray-700 mb-1">
