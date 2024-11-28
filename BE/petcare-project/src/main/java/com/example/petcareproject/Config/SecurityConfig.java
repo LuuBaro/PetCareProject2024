@@ -67,6 +67,7 @@
                                     "/api/roles/**",
                                     "/api/users/**",
                                     "/api/user_role/**",
+                                    "/api/auth/forgot-password/**",
                                     "/css/**",
                                     "/js/**",
                                     "/"
