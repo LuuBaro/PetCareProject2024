@@ -3,8 +3,6 @@ import Slider from "react-slick";
 import ProductItem from "./ProductItem";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import ArrowForwardIosOutlinedIcon from "@mui/icons-material/ArrowForwardIosOutlined";
-import ArrowBackIosNewOutlinedIcon from "@mui/icons-material/ArrowBackIosNewOutlined";
 import ProductService from "../../service/ProductService";
 import { Link } from "react-router-dom";
 
@@ -90,16 +88,7 @@ export default function CatProduct() {
             </Link>
           ))}
         </Slider>
-        <button
-          onClick={prev}
-          className="absolute left-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-          <ArrowBackIosNewOutlinedIcon sx={{ fontSize: "30px" }} />
-        </button>
-        <button
-          onClick={next}
-          className="absolute right-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-          <ArrowForwardIosOutlinedIcon sx={{ fontSize: "30px" }} />
-        </button>
+       
       </div>
     </>
   );

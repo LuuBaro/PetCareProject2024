@@ -43,7 +43,10 @@ const SidebarMenu = () => {
                         {isUserDropdownOpen && (
                             <ul className="ml-6 mt-2 space-y-2">
                                 <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/user" className="w-full">Quản lý users</Link>
+                                    <Link to="/user" className="w-full">Quản lý Nhân viên</Link>
+                                </li>
+                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
+                                    <Link to="/client" className="w-full">Danh sách người dùng</Link>
                                 </li>
                                 <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
                                     <Link to="/roles" className="w-full">Quản lý Role</Link>

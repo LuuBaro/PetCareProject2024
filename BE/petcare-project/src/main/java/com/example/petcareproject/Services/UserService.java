@@ -44,6 +44,7 @@ public class UserService implements UserDetailsService {
 
     public void saveUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword())); // Mã hóa mật khẩu trước khi lưu
+        user.setStatus(true); // Đặt trạng thái mặc định là true khi tạo
         userRepository.save(user);
 
         // Gán vai trò mặc định "Người dùng" nếu không có vai trò nào được chỉ định
@@ -54,7 +55,7 @@ public class UserService implements UserDetailsService {
     }
 
     public void save(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword())); // Mã hóa mật khẩu trước khi lưu
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
@@ -62,19 +63,31 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Update user data
         user.setFullName(updateUserRequest.getFullName());
         user.setPhone(updateUserRequest.getPhone());
         user.setEmail(updateUserRequest.getEmail());
+        user.setStatus(updateUserRequest.isStatus());
+        user.setImageUrl(updateUserRequest.getImageUrl());
 
-        // Save the updated user to the database
+
+        if (updateUserRequest.getPassword() != null && !updateUserRequest.getPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(updateUserRequest.getPassword());
+            user.setPassword(encodedPassword); // Lưu mật khẩu mã hóa
+        }
+
+        // Lưu thông tin người dùng đã cập nhật
         return userRepository.save(user);
     }
 
 
+
+
     public List<User> getAllUsers() {
-        return userRepository.findAll(); // Lấy tất cả người dùng
+        List<User> users = userRepository.findAll();
+        users.forEach(user -> System.out.println("User: " + user.getFullName() + ", Status: " + user.isStatus()));
+        return users;
     }
+
 
     public void delete(User user) {
         userRepository.delete(user); // Xóa người dùng
@@ -107,4 +120,6 @@ public class UserService implements UserDetailsService {
     public User findById(Long id) {
         return userRepository.findById(id).orElse(null); // Tìm người dùng theo ID
     }
+
+
 }

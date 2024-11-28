@@ -8,6 +8,7 @@ import ManageUser from "../components/Manage/ManageUser";// Add this import
 import ManageProductCategories from "../components/Manage/ManageProductCategories";
 import ManageBrand from "../components/Manage/ManageBrand";
 import UserManagement from "../components/Manage/ManageUser";
+import ClientManagement from "../components/Manage/ManageClient";
 import ProductDetailManager from "../components/Manage/ManageProductDetail";
 import ManageProductColors from "../components/Manage/ManageProductColors";
 import ManageProductImages from "../components/Manage/ManageProductImages";
@@ -44,6 +45,7 @@ function Admin() {
               {/* Add more routes as needed */}
               <Route path="/brands" element={<ManageBrand />} /> {/* Add this route */}
               <Route path="/user" element={<UserManagement />} /> {/* Add this route */}
+              <Route path="/client" element={<ClientManagement />} /> {/* Add this route */}
               <Route path="/roles" element={<ManageRole />} /> {/* Add this route */}
               <Route path="/product-details" element={<ProductDetailManager />} /> {/* Add this route */}
               <Route path="/product-color" element={<ManageProductColors />} /> {/* Add this route */}

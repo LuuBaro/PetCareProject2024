@@ -1,4 +1,3 @@
-// UserService.js
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8080/api/users';
@@ -41,11 +40,25 @@ const UserService = {
   // Cập nhật người dùng
   updateUser: async (id, updatedUser) => {
     try {
-      const response = await axios.put(`${BASE_URL}/${id}`, updatedUser);
+      // Kiểm tra ID và dữ liệu cập nhật có hợp lệ không
+      if (!id) throw new Error('User ID is required');
+      if (!updatedUser || typeof updatedUser !== 'object') {
+        throw new Error('Updated user data must be provided as an object');
+      }
+
+      const response = await axios.put(`${BASE_URL}/${id}`, updatedUser, {
+        headers: {
+          'Content-Type': 'application/json',
+          // Nếu cần thêm token:
+          // Authorization: `Bearer ${yourAuthToken}`,
+        },
+      });
+
       return response.data;
     } catch (error) {
-      console.error(`Error updating user with id ${id}:`, error);
-      throw error;
+      console.error(`Error updating user with ID ${id}:`, error?.response?.data || error.message);
+      // Quăng lỗi để xử lý thêm ở nơi gọi hàm
+      throw error.response?.data || error;
     }
   },
 
