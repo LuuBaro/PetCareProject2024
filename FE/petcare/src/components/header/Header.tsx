@@ -11,6 +11,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
+import FavoriteIcon from "@mui/icons-material/Favorite";  // Import icon trái tim
 
 export default function Header() {
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -142,49 +143,50 @@ export default function Header() {
                 </button>
 
                 {isOpen && (
-                  <ul className="absolute w-[200px] right-[-30px] mt-2 border-gray-500 bg-blue-100 text-black rounded-md shadow-lg z-50">
-                    <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                      <Link to="/user">
-                        <button className="px-4 py-2 flex items-center justify-center gap-2" >
-                          <LocalShippingOutlinedIcon /> Quản lý đơn hàng
-                        </button>
-                      </Link>
-                    </li>
-                    <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                      <Link to="/account">
-                        <button className="px-4 py-2 flex items-center justify-center gap-2">
-                          <AssignmentIndOutlinedIcon /> Quản lý tài khoản
-                        </button>
-                      </Link>
-                    </li>
-                    {userRole === "Admin" && (
+                    <ul className="absolute w-[200px] right-[-30px] mt-2 border-gray-500 bg-blue-100 text-black rounded-md shadow-lg z-50">
                       <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                        <Link to="/admin">
+                        <Link to="/user">
                           <button className="px-4 py-2 flex items-center justify-center gap-2">
-                            <ManageAccountsOutlinedIcon /> Admin
+                            <LocalShippingOutlinedIcon/> Quản lý đơn hàng
                           </button>
                         </Link>
                       </li>
-                    )}
-                    <hr className="mx-3 border-gray-500" />
-                    <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                      <button
-                        onClick={handleLogout}
-                        className="px-4 py-2 flex items-center justify-center gap-2"
-                      >
-                        <LogoutOutlinedIcon />
-                        Đăng xuất
-                      </button>
-                    </li>
-                  </ul>
+                      <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
+                        <Link to="/account">
+                          <button className="px-4 py-2 flex items-center justify-center gap-2">
+                            <AssignmentIndOutlinedIcon/> Quản lý tài khoản
+                          </button>
+                        </Link>
+                      </li>
+
+                      {userRole === "Admin" && (
+                          <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
+                            <Link to="/admin">
+                              <button className="px-4 py-2 flex items-center justify-center gap-2">
+                                <ManageAccountsOutlinedIcon/> Admin
+                              </button>
+                            </Link>
+                          </li>
+                      )}
+                      <hr className="mx-3 border-gray-500"/>
+                      <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 flex items-center justify-center gap-2"
+                        >
+                          <LogoutOutlinedIcon/>
+                          Đăng xuất
+                        </button>
+                      </li>
+                    </ul>
                 )}
               </div>
             ) : (
-              <li className="hover:text-white transition ease-out duration-200">
-                <Link to="/login">
-                  <PersonIcon sx={{ fontSize: 25 }} />
-                </Link>
-              </li>
+                <li className="hover:text-white transition ease-out duration-200">
+                  <Link to="/login">
+                    <PersonIcon sx={{fontSize: 25}}/>
+                  </Link>
+                </li>
             )}
 
             <li className="hover:text-white transition ease-out duration-200">
