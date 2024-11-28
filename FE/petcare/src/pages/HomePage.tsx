@@ -21,7 +21,6 @@ const HomePage = () => {
       <Catagory></Catagory>
       <TopSeller></TopSeller>
       <TopProduct></TopProduct>
-      <DogProduct></DogProduct>
       <CatProduct></CatProduct>
       <Artical></Artical>
       <Policy></Policy>

@@ -3,7 +3,7 @@ import ProductDetailService from "../../service/ProductDetailService";
 import ProductService from "../../service/ProductService";
 import ProductColorService from "../../service/ProductColorsService.js";
 import ProductSizeService from "../../service/ProductSizesService.js";
-import ProductWeightService from "../../service/ProductWeightsService.js"
+import ProductWeightService from "../../service/ProductWeightsService.js";
 
 const ProductDetailManager = () => {
   const [productDetails, setProductDetails] = useState([]);
@@ -24,6 +24,7 @@ const ProductDetailManager = () => {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [modalOpen, setModalOpen] = useState(false); // Control modal visibility
 
   useEffect(() => {
     loadProductDetails();
@@ -140,6 +141,7 @@ const ProductDetailManager = () => {
         status: true, // Reset to default status
       });
       loadProductDetails();
+      setModalOpen(false); // Close modal after submission
     } catch (error) {
       console.error("Error saving product detail", error);
       setErrorMessage("Có lỗi khi lưu thông tin chi tiết sản phẩm.");
@@ -159,6 +161,7 @@ const ProductDetailManager = () => {
     });
     setEditId(detail.productDetailId);
     setEditMode(true);
+    setModalOpen(true); // Open modal for editing
   };
 
   const handleDelete = async (id) => {
@@ -177,189 +180,205 @@ const ProductDetailManager = () => {
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Product Detail Manager</h1>
         {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Sản phẩm</label>
-              <select
-                  name="productId"
-                  value={formData.productId}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              >
-                <option value="">Chọn sản phẩm</option>
-                {products.map((product) => (
-                    <option key={product.productId} value={product.productId}>
-                      {product.productName}
-                    </option>
-                ))}
-              </select>
+
+        {/* Add Product Button */}
+        <button
+            onClick={() => setModalOpen(true)}  // Open modal when button is clicked
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4 hover:bg-blue-600"
+        >
+          Thêm chi tiết sản phẩm
+        </button>
+
+        {/* Modal */}
+        {modalOpen && (
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-2/3">
+                <h2 className="text-xl font-semibold mb-4">{editMode ? "Cập nhật chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}</h2>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Form Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Product */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Sản phẩm</label>
+                      <select
+                          name="productId"
+                          value={formData.productId}
+                          onChange={handleInputChange}
+                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                      >
+                        <option value="">Chọn sản phẩm</option>
+                        {products.map((product) => (
+                            <option key={product.productId} value={product.productId}>
+                              {product.productName}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Color */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Màu sắc</label>
+                      <select
+                          name="productColorId"
+                          value={formData.productColorId}
+                          onChange={handleInputChange}
+                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                      >
+                        <option value="">Chọn màu sắc</option>
+                        {colors.map((color) => (
+                            <option key={color.productColorId} value={color.productColorId}>
+                              {color.color}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Size */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Size</label>
+                      <select
+                          name="productSizeId"
+                          value={formData.productSizeId}
+                          onChange={handleInputChange}
+                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                      >
+                        <option value="">Chọn kích thước</option>
+                        {sizes.map((size) => (
+                            <option key={size.productSizeId} value={size.productSizeId}>
+                              {size.productSize}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Weight */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Trọng lượng</label>
+                      <select
+                          name="productWeightId"
+                          value={formData.productWeightId}
+                          onChange={handleInputChange}
+                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                      >
+                        <option value="">Chọn trọng lượng</option>
+                        {weightsList.map((weight) => (
+                            <option key={weight.productWeightId} value={weight.productWeightId}>
+                              {weight.weightValue}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Quantity */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Số lượng</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleInputChange}
+                        className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Giá</label>
+                    <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex items-center">
+                    <input
+                        type="checkbox"
+                        name="status"
+                        checked={formData.status}
+                        onChange={handleStatusChange}
+                        className="mr-2"
+                    />
+                    <span className="text-sm">Active</span>
+                  </div>
+
+                  <div className="flex justify-between mt-4">
+                    <button
+                        type="button"
+                        onClick={() => setModalOpen(false)}  // Close modal
+                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                        type="submit"
+                        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                    >
+                      {editMode ? "Cập nhật" : "Thêm"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Màu sắc</label>
-              <select
-                  name="productColorId"
-                  value={formData.productColorId}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              >
-                <option value="">Chọn màu</option>
-                {colors.map((color) => (
-                    <option key={color.productColorId} value={color.productColorId}>
-                      {color.color}
-                    </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Kích thước</label>
-              <select
-                  name="productSizeId"
-                  value={formData.productSizeId}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              >
-                <option value="">Chọn kích thước</option>
-                {sizes.map((size) => (
-                    <option key={size.productSizeId} value={size.productSizeId}>
-                      {size.productSize}
-                    </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cân nặng</label>
-              <select
-                  name="productWeightId"
-                  value={formData.productWeightId}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              >
-                <option value="">Chọn cân nặng</option>
-                {weightsList.map((weight) => (
-                    <option key={weight.productWeightId} value={weight.productWeightId}>
-                      {weight.weightValue}
-                    </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Số lượng</label>
-              <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Giá</label>
-              <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Trạng thái</label>
-            <input
-                type="checkbox"
-                checked={formData.status}
-                onChange={handleStatusChange}
-                className="focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <button
-                type="submit"
-                className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                disabled={loading}
-            >
-              {editMode ? "Cập nhật chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}
-            </button>
-          </div>
-        </form>
-
-
-        <h2 className="text-xl font-semibold mb-4">Danh sách các biếng thể</h2>
-        {loading ? (
-            <p>Loading...</p>
-        ) : (
-            <table className="min-w-full table-auto border-collapse rounded-lg shadow-lg">
-              <thead>
-              <tr className="bg-gray-200 text-gray-700 text-left">
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Product Name</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Color</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Weight</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Quantity</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-sm font-semibold uppercase tracking-wider">Actions</th>
-              </tr>
-              </thead>
-              <tbody>
-              {productDetails.map((detail) => (
-                  <tr
-                      key={detail.productDetailId}
-                      className="border-b border-gray-300 hover:bg-gray-100 transition duration-300"
-                  >
-                    <td className="px-6 py-4 text-sm text-gray-900">{detail.product?.productName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{detail.productColor?.color}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{detail.productSize?.productSize}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{detail.productWeight?.weightValue}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{detail.quantity}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{detail.price}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-          <span
-              className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
-                  detail.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-              }`}
-          >
-            {detail.status ? "Active" : "Inactive"}
-          </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      <div className="flex space-x-2">
-                        <button
-                            onClick={() => handleEdit(detail)}
-                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow hover:bg-yellow-400 transition duration-200"
-                        >
-                          Edit
-                        </button>
-                        <button
-                            onClick={() => handleDelete(detail.productDetailId)}
-                            className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-400 transition duration-200"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-              ))}
-              </tbody>
-            </table>
-
         )}
+
+        {/* Display Product Details */}
+        <table className="min-w-full border-collapse mt-6 bg-white shadow-md rounded-lg overflow-hidden">
+          <thead>
+          <tr className="bg-gray-100 text-gray-700">
+            <th className="py-3 px-6 text-left border-b">Sản phẩm</th>
+            <th className="py-3 px-6 text-left border-b">Màu sắc</th>
+            <th className="py-3 px-6 text-left border-b">Size</th>
+            <th className="py-3 px-6 text-left border-b">Trọng lượng</th>
+            <th className="py-3 px-6 text-left border-b">Số lượng</th>
+            <th className="py-3 px-6 text-left border-b">Giá</th>
+            <th className="py-3 px-6 text-left border-b">Trạng thái</th>
+            <th className="py-3 px-6 text-left border-b">Hành động</th>
+          </tr>
+          </thead>
+          <tbody>
+          {productDetails.map((detail, index) => (
+              <tr
+                  key={detail.productDetailId}
+                  className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
+              >
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.product?.productName}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.productColor?.color}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.productSize?.productSize}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.productWeight?.weightValue}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.quantity}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.price}</td>
+                <td className="py-3 px-6 text-sm text-gray-800">{detail.status ? "Active" : "Inactive"}</td>
+                <td className="py-3 px-6 text-sm text-gray-800 flex gap-2">
+                  <button
+                      onClick={() => handleEdit(detail)}
+                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                      onClick={() => handleDelete(detail.productDetailId)}
+                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+          ))}
+          </tbody>
+        </table>
+
       </div>
   );
 };

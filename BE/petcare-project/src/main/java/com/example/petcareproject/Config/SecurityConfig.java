@@ -40,6 +40,7 @@
                     .csrf().disable()
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers(
+                                    "/api/favourites/**",
                                     "/api/product-details/by-product/**",
                                     "/api/product-weights/**",
                                     "/api/product-colors/**",
