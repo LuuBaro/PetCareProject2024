@@ -27,6 +27,12 @@ export function Account() {
         phone: localStorage.getItem('phone'),
     });
 
+
+    
+
+    const closeModal = () => setShowChangePassword(false);
+
+
     const handleEditClick = () => {
         setIsEditing(true); // Switch to edit mode
     };

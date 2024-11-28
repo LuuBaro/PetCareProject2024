@@ -1,108 +1,135 @@
-import React, { useEffect, useState, useRef } from "react";
-import Slider from "react-slick";
+import React, { useEffect, useState } from "react";
 import ProductItem from "./ProductItem";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import ArrowForwardIosOutlinedIcon from "@mui/icons-material/ArrowForwardIosOutlined";
-import ArrowBackIosNewOutlinedIcon from "@mui/icons-material/ArrowBackIosNewOutlined";
-import ProductService from "../../service/ProductService"; // Giữ nguyên
+import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import ProductService from "../../service/ProductService";
+import FavouriteService from "../../service/FavouriteService";
 import { Link } from "react-router-dom";
 
 export default function CatProduct() {
     const [products, setProducts] = useState([]);
-    const sliderRef = useRef(null);
+    const [favorites, setFavorites] = useState([]);
+    const [userId, setUserId] = useState(null);
 
+    // Hàm tạo giá ngẫu nhiên
+    const getRandomPrice = () => Math.floor(Math.random() * (500000 - 50000 + 1)) + 50000;
+
+    // Retrieve userId from localStorage
+    useEffect(() => {
+        const storedUserId = localStorage.getItem("userId");
+        if (storedUserId) {
+            setUserId(parseInt(storedUserId, 10));
+        } else {
+            console.error("User ID not found in localStorage");
+        }
+    }, []);
+
+    // Fetch products and user favorites
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                // Gọi API lấy tất cả sản phẩm
                 const response = await ProductService.getAllProducts();
                 const formattedProducts = response.data.map((product) => ({
                     id: product.productId,
                     name: product.productName,
                     quantity: product.productQuantity,
-                    image: product.imageUrl || 'default_image_url.jpg', // Hình ảnh mặc định
+                    image: product.imageUrl || "default_image_url.jpg",
                     rating: product.rating || 0,
-                    price: product.productDetail ? product.productDetail.price : 0 // Lấy giá từ productDetail
+                    price: getRandomPrice(), // Gán giá ngẫu nhiên
                 }));
                 setProducts(formattedProducts);
             } catch (error) {
-                console.error("Lỗi khi lấy sản phẩm:", error);
+                console.error("Error fetching products:", error);
+            }
+        };
+
+        const fetchFavorites = async () => {
+            if (!userId) return;
+
+            try {
+                const response = await FavouriteService.getFavouritesByUser(userId);
+                const likedProductIds = response
+                    .filter((fav) => fav.liked)
+                    .map((fav) => fav.product.productId);
+                FavouriteService.saveFavoritesToLocalStorage(likedProductIds);
+                setFavorites(likedProductIds);
+            } catch (error) {
+                console.error("Error fetching favorites:", error);
             }
         };
 
         fetchProducts();
-    }, []);
+        fetchFavorites();
+    }, [userId]);
 
-    const settings = {
-        infinite: true,
-        speed: 500,
-        slidesToShow: 5,
-        slidesToScroll: 1,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 3,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 480,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
-                },
-            },
-        ],
-    };
+    // Toggle favorite status
+    const toggleFavorite = async (productId) => {
+        if (!userId) {
+            console.error("User ID is not available.");
+            return;
+        }
 
-    const next = () => {
-        sliderRef.current.slickNext();
-    };
+        const isFavorite = favorites.includes(productId);
+        const updatedFavorites = isFavorite
+            ? favorites.filter((id) => id !== productId)
+            : [...favorites, productId];
 
-    const prev = () => {
-        sliderRef.current.slickPrev();
+        setFavorites(updatedFavorites);
+        FavouriteService.saveFavoritesToLocalStorage(updatedFavorites);
+
+        try {
+            const likeDate = new Date().toISOString();
+            if (isFavorite) {
+                await FavouriteService.removeFavouriteByUserAndProduct(userId, productId);
+            } else {
+                await FavouriteService.addFavourite({
+                    user: { userId },
+                    product: { productId },
+                    likeDate,
+                    liked: true,
+                });
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            setFavorites(favorites);
+        }
     };
 
     return (
-        <>
-            <h2 className="block mx-32 text-3xl py-4 font-semibold">
-                Sản phẩm cho mèo
-            </h2>
-            <div className="mx-32 mb-10 gap-5 relative">
-                <Slider ref={sliderRef} {...settings}>
-                    {products.map((product) => (
-                        // Update to pass product.id to the Link
-                        <Link to={`/ProductDetail/by-product/${product.id}`} key={product.id}>
+        <div className="mx-32">
+            <h2 className="text-3xl py-4 font-semibold">Gợi ý sản phẩm</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+                {products.map((product) => (
+                    <div key={product.id} className="relative">
+                        <Link to={`/ProductDetail/by-product/${product.id}`}>
                             <ProductItem
                                 name={product.name}
                                 quantity={`Số lượng: ${product.quantity}`}
                                 image={product.image}
                                 rating={product.rating}
-                                price={`Giá: ${product.price} VND`}
+                                price={`Giá: ${product.price.toLocaleString()} VND`} // Hiển thị giá với định dạng tiền tệ
                             />
                         </Link>
-                    ))}
-                </Slider>
-                <button
-                    onClick={prev}
-                    className="absolute left-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-                    <ArrowBackIosNewOutlinedIcon sx={{ fontSize: "30px" }} />
-                </button>
-                <button
-                    onClick={next}
-                    className="absolute right-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-                    <ArrowForwardIosOutlinedIcon sx={{ fontSize: "30px" }} />
-                </button>
+                        <a
+                            onClick={() => toggleFavorite(product.id)}
+                            className={`absolute top-2 right-2 ${
+                                favorites.includes(product.id) ? "cursor-not-allowed" : ""
+                            }`}
+                            title={
+                                favorites.includes(product.id)
+                                    ? "Sản phẩm này đã có trong danh sách yêu thích của bạn"
+                                    : "Thêm vào danh sách yêu thích"
+                            }
+                        >
+                            {favorites.includes(product.id) ? (
+                                <FavoriteIcon className="text-red-500" />
+                            ) : (
+                                <FavoriteBorderOutlinedIcon className="text-red-500" />
+                            )}
+                        </a>
+                    </div>
+                ))}
             </div>
-        </>
+        </div>
     );
 }

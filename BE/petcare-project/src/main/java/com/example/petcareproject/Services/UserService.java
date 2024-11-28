@@ -12,6 +12,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +20,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +36,9 @@ public class UserService implements UserDetailsService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     @Autowired
+    @Lazy
     private EmailService emailService;
 
     @Autowired
@@ -85,6 +90,24 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Error updating user with ID: " + userId, ex);
         }
     }
+
+
+//     Phương thức kiểm tra email tồn tại trong hệ thống
+    public boolean checkIfEmailExists(String email) {
+        User user = userRepository.findByEmail(email);
+        return user != null;  // Kiểm tra nếu user khác null, có nghĩa là email tồn tại
+    }
+
+    public void changePassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword)); // Mã hóa mật khẩu mới
+        userRepository.save(user); // Lưu lại thay đổi
+    }
+
+
+
 
     public List<User> getAllUsers() {
         return userRepository.findAll(); // Lấy tất cả người dùng

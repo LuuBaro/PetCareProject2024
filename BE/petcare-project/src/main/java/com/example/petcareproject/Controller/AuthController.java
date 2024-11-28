@@ -1,12 +1,10 @@
 package com.example.petcareproject.Controller;
 
 import com.example.petcareproject.Model.User;
-import com.example.petcareproject.dto.AuthRequestDTO;
-import com.example.petcareproject.dto.FacebookUserDTO;
-import com.example.petcareproject.dto.JwtResponseDTO;
+import com.example.petcareproject.Services.EmailService;
+import com.example.petcareproject.dto.*;
 import com.example.petcareproject.Services.JwtService;
 import com.example.petcareproject.Services.UserService;
-import com.example.petcareproject.dto.RegisterRequestDTO;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -16,6 +14,7 @@ import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
 import com.restfb.Version;
 import com.restfb.exception.FacebookOAuthException;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -43,6 +43,9 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private EmailService emailService;
 
     private static final JacksonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String GOOGLE_CLIENT_ID = "854614351620-s8cmgi8ticqj4p2jlqedf4drbis3s7oj.apps.googleusercontent.com"; // Thay bằng client ID của bạn

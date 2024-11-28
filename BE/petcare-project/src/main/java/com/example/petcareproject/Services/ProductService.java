@@ -1,6 +1,7 @@
 package com.example.petcareproject.Services;
 
 import com.example.petcareproject.Model.Product;
+import com.example.petcareproject.Model.ProductCategogy;
 import com.example.petcareproject.Repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,10 @@ public class ProductService {
     // Delete a product by id
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
+    }
+
+    public List<Product> getProductsByCategory(ProductCategogy categoryId) {
+        return productRepository.findAllByCategory(categoryId);
     }
 
 
