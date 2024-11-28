@@ -47,7 +47,6 @@ function App() {
         <Route path="/payorder" element={<PayOrder />} />
         <Route path="/orderpage" element={<OrderPage />} />
         <Route path="/account" element={<Account />} />
-     
         <Route
           path="/cart"
           element={
