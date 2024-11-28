@@ -4,6 +4,7 @@ import com.example.petcareproject.Model.Role;
 import com.example.petcareproject.Model.User;
 import com.example.petcareproject.Services.RoleService;
 import com.example.petcareproject.Services.UserService;
+import com.example.petcareproject.dto.ChangePasswordRequest;
 import com.example.petcareproject.dto.UserUpdateDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -101,5 +102,17 @@ public class UserController {
 
         return ResponseEntity.ok(updatedUser);
     }
+
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            userService.changePassword(request);
+            return ResponseEntity.ok("Đổi mật khẩu thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
 }

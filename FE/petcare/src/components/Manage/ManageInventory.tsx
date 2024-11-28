@@ -95,7 +95,6 @@ const OrderManagement: React.FC = () => {
     };
 
     // Lọc đơn hàng dựa trên tab hiện tại và từ khóa tìm kiếm
-    // Lọc đơn hàng dựa trên tab hiện tại và từ khóa tìm kiếm
     const filteredOrders = orders
         // Bước 1: Lọc theo tab hiện tại (nếu không phải "all")
         .filter((order) => activeTab === "all" || order.status?.toLowerCase() === activeTab.toLowerCase())

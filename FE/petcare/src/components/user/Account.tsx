@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Header from "../header/Header";
 import Footer from '../footer/Footer';
-import { FaUser, FaLock, FaHistory, FaHeart, FaStar, FaGift, FaCoins, FaHeadset } from 'react-icons/fa'
 import axios from 'axios';
+import Sidebar from "../user/Sidebar";
+import $ from "jquery";
+import Swal from "sweetalert2";
 
 export function Account() {
-    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [activeTab, setActiveTab] = useState("account");
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [currentPasswordError, setCurrentPasswordError] = useState("");
+    const [newPasswordError, setNewPasswordError] = useState("");
+    const [confirmPasswordError, setConfirmPasswordError] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [userInfo, setUserInfo] = useState({
         fullName: localStorage.getItem('fullName'),
@@ -13,7 +21,11 @@ export function Account() {
         phone: localStorage.getItem('phone'),
     });
 
+
+    
+
     const closeModal = () => setShowChangePassword(false);
+
 
     const handleEditClick = () => {
         setIsEditing(true); // Switch to edit mode
@@ -84,70 +96,125 @@ export function Account() {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         setUserInfo((prevState) => ({
             ...prevState,
             [name]: value,
         }));
     };
 
-    return (
-        <div className="flex flex-col min-h-screen">
-            <Header />
+    const validateNewPassword = (password) => {
+        if (password === currentPassword) {
+            setNewPasswordError("Mật khẩu mới không được giống với mật khẩu hiện tại!");
+        } else if (password.length < 6) {
+            setNewPasswordError("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        } else {
+            setNewPasswordError(""); // Không có lỗi
+        }
+    };
 
-            <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
-                {/* Sidebar Menu */}
+    const validateConfirmPassword = (password) => {
+        if (password !== newPassword) {
+            setConfirmPasswordError("Mật khẩu xác nhận không khớp!");
+        } else {
+            setConfirmPasswordError(""); // Không có lỗi
+        }
+    };
 
-                <div className="w-1/4 pr-8 bg-gray-300 p-6">
-                    <div className="w-full flex items-center mb-6">
-                        <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-gray-400 text-4xl">👤</span>
-                        </div>
-                        <div className="flex flex-col justify-center ml-4">
-                            <h3 className="text-sm font-semibold text-gray-700 mb-1">Tài khoản của</h3>
-                            <span className="text-base font-medium text-gray-900">{localStorage.getItem('fullName')}</span>
-                        </div>
-                    </div>
-                    <ul className="space-y-4 text-sm text-gray-700">
-                        <li className="flex items-center text-gray-800 hover:text-blue-600 cursor-pointer text-lg font-bold" onClick={() => setShowChangePassword(false)}>
-                            <FaUser className="mr-3" />
-                            <span>Tài Khoản Của Tôi</span>
-                        </li>
-                        <li className="flex items-center text-gray-800 hover:text-green-600 cursor-pointer text-lg font-bold" onClick={() => setShowChangePassword(true)}>
-                            <FaLock className="mr-3" />
-                            <span>Đổi Mật Khẩu</span>
-                        </li>
-                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
-                            <FaHistory className="mr-3" />
-                            <span>Lịch Sử Mua Hàng</span>
-                        </li>
-                        <li className="flex items-center text-gray-700 hover:text-pink-500 cursor-pointer text-lg font-bold">
-                            <FaHeart className="mr-3" />
-                            <span>Sản Phẩm Yêu Thích</span>
-                        </li>
-                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
-                            <FaStar className="mr-3" />
-                            <span>Đánh Giá Sản Phẩm</span>
-                        </li>
-                        <li className="flex items-center text-gray-800 hover:text-orange-600 cursor-pointer text-lg font-bold">
-                            <FaGift className="mr-3" />
-                            <span>Kho Voucher</span>
-                        </li>
-                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
-                            <FaCoins className="mr-3" />
-                            <span>Petcare Xu</span>
-                        </li>
-                        <li className="flex items-center text-gray-700 hover:text-yellow-500 cursor-pointer text-lg font-bold">
-                            <FaHeadset className="mr-3" />
-                            <span>Hỗ Trợ Khách Hàng</span>
-                        </li>
-                    </ul>
-                </div>
+    const validateInputs = () => {
+        const userId = localStorage.getItem("userId");
+        const token = localStorage.getItem("token");
 
-                {/* Main Content */}
-                <div className="w-3/4 pl-10 bg-gray-100">
+        if (!userId) {
+            return "Không tìm thấy thông tin người dùng!";
+        }
+
+        if (!token) {
+            return "Vui lòng đăng nhập lại để tiếp tục!";
+        }
+
+        if (!currentPassword) {
+            return "Vui lòng nhập mật khẩu hiện tại!";
+        }
+
+        if (!newPassword || newPassword.length < 6) {
+            return "Mật khẩu mới phải có ít nhất 6 ký tự!";
+        }
+
+        if (newPassword === currentPassword) {
+            return "Mật khẩu mới không được giống với mật khẩu hiện tại!";
+        }
+
+        if (newPassword !== confirmPassword) {
+            return "Mật khẩu mới và xác nhận mật khẩu không khớp!";
+        }
+
+        return null; // Không có lỗi
+    };
+
+    const handleSave = async () => {
+        const userId = localStorage.getItem("userId");
+        const token = localStorage.getItem("token");
+
+        // Kiểm tra lỗi đầu vào
+        const error = validateInputs();
+        if (error) {
+            Swal.fire({
+                icon: "error",
+                title: "Lỗi!",
+                text: error,
+                confirmButtonText: "OK",
+            });
+            return;
+        }
+
+        // Gửi yêu cầu đổi mật khẩu
+        try {
+            const response = await axios.put(
+                "http://localhost:8080/api/users/change-password",
+                {
+                    userId, // Đảm bảo gửi đúng định dạng userId mà API yêu cầu
+                    currentPassword,
+                    newPassword,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            // Hiển thị thông báo thành công
+            Swal.fire({
+                icon: "success",
+                title: "Thành công!",
+                text: "Đổi mật khẩu thành công!",
+                confirmButtonText: "OK",
+            });
+
+            // Reset dữ liệu sau khi thành công
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (error) {
+            // Xử lý lỗi trả về từ API
+            const errorMessage = error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại!";
+            Swal.fire({
+                icon: "error",
+                title: "Lỗi!",
+                text: errorMessage,
+                confirmButtonText: "OK",
+            });
+            console.error("Error changing password:", error);
+        }
+    };
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case "account":
+                return (
                     <div className="items-center">
-                        <h2 className="text-4xl font-extrabold mb-6 text-gray-700">Thông tin cá nhân</h2>
+                        <h2 className="text-4xl font-extrabold mb-6 mt-3 text-gray-700">Thông tin cá nhân</h2>
                         <p className="text-sm text-gray-600 mb-6 font-bold italic">
                             Quản lý thông tin hồ sơ để bảo mật tài khoản
                         </p>
@@ -155,7 +222,8 @@ export function Account() {
                         <div className="flex items-start">
                             {/* Avatar Section */}
                             <div className="flex flex-col items-center mr-12">
-                                <div className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
+                                <div
+                                    className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
                                     <span className="text-5xl text-blue-400">👤</span>
                                     <button className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full">
                                         <i className="fas fa-pencil-alt text-white"></i>
@@ -173,7 +241,8 @@ export function Account() {
                                     <div>
                                         {/* Full Name */}
                                         <div className="flex items-center mb-4">
-                                            <label className="block text-lg font-bold text-gray-700 w-32">Họ & Tên:</label>
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Họ &
+                                                Tên:</label>
                                             {isEditing ? (
                                                 <input
                                                     type="text"
@@ -184,31 +253,32 @@ export function Account() {
                                                 />
                                             ) : (
                                                 <span className="text-gray-900 text-lg flex-grow">
-                                                    {userInfo.fullName || 'Chưa cập nhật'}
-                                                </span>
+                                                        {userInfo.fullName || 'Chưa cập nhật'}
+                                                    </span>
                                             )}
                                         </div>
 
                                         {/* Email */}
                                         <div className="flex items-center">
-                                            <label className="block text-lg font-bold text-gray-700 w-32">Email:</label>
+                                            <label
+                                                className="block text-lg font-bold text-gray-700 w-32">Email:</label>
                                             <span className="text-gray-900 text-lg flex-grow">
-                                                {userInfo.email
-                                                    ? `*****${userInfo.email.slice(userInfo.email.indexOf('@') - 3)}`
-                                                    : 'Chưa cập nhật'}
-                                            </span>
+                                                    {userInfo.email
+                                                        ? `*****${userInfo.email.slice(userInfo.email.indexOf('@') - 3)}`
+                                                        : 'Chưa cập nhật'}
+                                                </span>
                                         </div>
                                     </div>
-
 
                                     {/* Right Section */}
                                     <div>
                                         {/* Address */}
                                         <div className="flex items-center mb-4">
-                                            <label className="block text-lg font-bold text-gray-700 w-32">Địa chỉ:</label>
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Địa
+                                                chỉ:</label>
                                             <span className="text-gray-900 text-lg flex-grow">
-                                                {userInfo.address || 'Chưa cập nhật'}
-                                            </span>
+                                                    {userInfo.address || 'Chưa cập nhật'}
+                                                </span>
                                             <button
                                                 onClick={() => handleUpdateField('address')}
                                                 className="text-blue-500 text-sm font-semibold ml-2"
@@ -219,7 +289,8 @@ export function Account() {
 
                                         {/* Phone Number */}
                                         <div className="flex items-center">
-                                            <label className="block text-lg font-bold text-gray-700 w-32">Số điện thoại:</label>
+                                            <label className="block text-lg font-bold text-gray-700 w-32">Số điện
+                                                thoại:</label>
                                             {isEditing ? (
                                                 <input
                                                     type="text"
@@ -230,8 +301,8 @@ export function Account() {
                                                 />
                                             ) : (
                                                 <span className="text-gray-900 text-lg flex-grow">
-                                                    {userInfo.phone ? `****${userInfo.phone.slice(-3)}` : 'Chưa cập nhật'}
-                                                </span>
+                                                        {userInfo.phone ? `****${userInfo.phone.slice(-3)}` : 'Chưa cập nhật'}
+                                                    </span>
                                             )}
                                         </div>
                                     </div>
@@ -264,56 +335,123 @@ export function Account() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                );
+            case "changePassword":
+                return (
+                    <div className="items-center">
+                        <h3 className="text-4xl font-extrabold mb-6 mt-3 text-gray-700">Đổi Mật Khẩu</h3>
 
-
-            {showChangePassword && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-                        <h3 className="text-xl font-semibold mb-6">Đổi Mật Khẩu</h3>
+                        <div id="passwordSuccess" className="hidden text-green-500 font-semibold mb-4"></div>
+                        {/* Mật khẩu hiện tại */}
                         <div>
-                            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu hiện tại</label>
+                            <label
+                                htmlFor="currentPassword"
+                                className="block text-lg font-bold text-gray-700 mb-1"
+                            >
+                                Mật khẩu hiện tại
+                            </label>
                             <input
                                 id="currentPassword"
                                 type="password"
                                 className="w-full p-3 border border-gray-300 rounded-lg mb-4"
                                 placeholder="Nhập mật khẩu hiện tại"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
                             />
                         </div>
+
+                        {/* Mật khẩu mới */}
                         <div>
-                            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
+                            <label
+                                htmlFor="newPassword"
+                                className="block text-lg font-bold text-gray-700 mb-1"
+                            >
+                                Mật khẩu mới
+                            </label>
                             <input
                                 id="newPassword"
                                 type="password"
-                                className="w-full p-3 border border-gray-300 rounded-lg mb-4"
+                                className="w-full p-3 border border-gray-300 rounded-lg mb-2"
                                 placeholder="Nhập mật khẩu mới"
+                                value={newPassword}
+                                onChange={(e) => {
+                                    setNewPassword(e.target.value);
+                                    validateNewPassword(e.target.value);
+                                }}
                             />
+                            {newPasswordError && (
+                                <span className="text-red-500 text-sm">{newPasswordError}</span>
+                            )}
                         </div>
+
+                        {/* Xác nhận mật khẩu mới */}
                         <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Xác nhận mật khẩu mới</label>
+                            <label
+                                htmlFor="confirmPassword"
+                                className="block text-lg font-bold text-gray-700 mb-1"
+                            >
+                                Xác nhận mật khẩu mới
+                            </label>
                             <input
                                 id="confirmPassword"
                                 type="password"
                                 className="w-full p-3 border border-gray-300 rounded-lg"
                                 placeholder="Xác nhận mật khẩu mới"
+                                value={confirmPassword}
+                                onChange={(e) => {
+                                    setConfirmPassword(e.target.value);
+                                    validateConfirmPassword(e.target.value);
+                                }}
                             />
+                            {confirmPasswordError && (
+                                <span className="text-red-500 text-sm">{confirmPasswordError}</span>
+                            )}
                         </div>
-                        <div className="mt-6 flex justify-between">
+
+                        {/* Nút lưu */}
+                        <div className="mt-6 flex">
                             <button
-                                className="w-1/3 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
-                                onClick={closeModal}
+                                onClick={handleSave}
+                                className="w-1/3 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
                             >
-                                Hủy
-                            </button>
-                            <button className="w-1/3 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
                                 Lưu
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
-            <Footer />
+
+                );
+            case "orderHistory":
+                return <div>Lịch Sử Mua Hàng</div>;
+            case "favorites":
+                return <div>Sản Phẩm Yêu Thích</div>;
+            case "reviews":
+                return <div>Đánh Giá Sản Phẩm</div>;
+            case "vouchers":
+                return <div>Kho Voucher</div>;
+            case "petcareXu":
+                return <div>Petcare Xu</div>;
+            case "support":
+                return <div>Hỗ Trợ Khách Hàng</div>;
+            default:
+                return <div>Chọn một mục bên trái để xem nội dung</div>;
+        }
+    };
+
+    return (
+        <div className="flex flex-col min-h-screen">
+            <Header/>
+
+            <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
+                <Sidebar
+                    setActiveTab={setActiveTab}
+                />
+                <div
+                    className="w-3/4 pl-10 bg-gray-100"
+                    style={{minHeight: '70vh', display: 'flex', flexDirection: 'column'}}
+                >
+                    {renderContent()}</div>
+            </div>
+            <Footer/>
         </div>
     );
 }

@@ -4,22 +4,36 @@ import Header from "../header/Header";
 import Modal from "react-modal";
 import Swal from "sweetalert2";
 import AddressModal from "./AddressModal";
-import {calculateShippingFee} from "../../service/AddressService";
+import {getProvinces, getDistricts, getWards, addAddress} from '../../service/AddressService';
+
+const API_BASE_URL = 'https://online-gateway.ghn.vn/shiip/public-api'; // Base URL của API Giao Hàng Nhanh
+const TOKEN = '0fe4c8c9-71cd-11ef-9839-ea1b8b4124d2'; // Thay bằng token thật của bạn
+const SHOP_ID = '5321275'; // Thay bằng shop ID của bạn
 
 interface Product {
     productId: number;
+    productDetailId: number; // Thêm productDetailId
     image: string;
     productName: string;
     price: number;
     quantity: number;
+    color: string;  // Thêm màu sắc
+    weight: number; // Thêm cân nặng
+    size: string; // Thêm kích thước
+}
+interface AddressFormProps {
+    onSubmit: (newAddress: any) => void;
+    onCancel: () => void;
+    userId: string | null;
 }
 
 Modal.setAppElement('#root');
-const Checkout: React.FC = () => {
+const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     const location = useLocation();
     const navigate = useNavigate();
     const products: Product[] = location.state?.products || [];
     const total: number = location.state?.total || 0;
+    const [shippingFee, setShippingFee] = useState(0); // Khởi tạo phí vận chuyển
     const [refreshCheckout, setRefreshCheckout] = useState(0);
     // const [shippingFee, setShippingFee] = useState<number>(0);
     const userId = localStorage.getItem("userId");
@@ -36,39 +50,120 @@ const Checkout: React.FC = () => {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
     const [vnpResponseCode, setVnpResponseCode] = useState<string | null>(null);
 
-    useEffect(() => {
-        const queryParams = new URLSearchParams(location.search);
-        const responseCode = queryParams.get("vnp_ResponseCode");
+    //API GHN
+    const [provinces, setProvinces] = useState<any[]>([]);
+    const [districts, setDistricts] = useState<any[]>([]);
+    const [wards, setWards] = useState<any[]>([]);
+    const [selectedProvince, setSelectedProvince] = useState<string>('');
+    const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+    const [formData, setFormData] = useState({
+        name: '', // Thêm họ và tên
+        phone: '', // Thêm số điện thoại
+        ward: '',
+        address: '',
+        isDefault: false
+    });
 
-        // if (responseCode) {
-        //     handleVNPayResponse(responseCode);
-        // }
-        fetchFirstAddress();
-        // fetchShippingFee();
-    }, [userId, location.search, refreshCheckout, address]);
+    const [isLoadingProvinces, setIsLoadingProvinces] = useState<boolean>(true);
+    const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
+    const [isLoadingWards, setIsLoadingWards] = useState<boolean>(false);
 
-    // const fetchShippingFee = async () => {
-    //     if (address) {
-    //         const fee = await calculateShippingFee(address); // Assuming address has the required data for calculation
-    //         setShippingFee(fee);
-    //     }
-    // };
 
-    const fetchFirstAddress = async () => {
-        setLoading(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const selectedDistrictObj = districts.find(d => d.DistrictID === parseInt(selectedDistrict, 10));
+        const selectedWardObj = wards.find(w => w.WardCode === formData.ward);
+
+        const addressData = {
+            fullAddress: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
+            street: formData.address,
+            province: selectedProvince,
+            district: selectedDistrictObj ? selectedDistrictObj.DistrictName : '',
+            ward: selectedWardObj ? selectedWardObj.WardName : '',
+            userId: { id: userId }
+        };
+
+
         try {
-            const response = await fetch(`http://localhost:8080/api/addresses/first?userId=${userId}`);
-            if (!response.ok) throw new Error(`Error fetching address: ${response.statusText}`);
-
-            const data = await response.json();
-            setAddress(data.fullAddress);
+            const result = await addAddress(addressData);
+            if (result) {
+                onSubmit(result);
+            } else {
+                console.error('Invalid address data');
+            }
         } catch (error) {
-            console.error("Error fetching address:", error);
-            alert("Could not fetch address.");
-        } finally {
-            setLoading(false);
+            console.error('Error adding address:', error);
         }
     };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const {name, value, type} = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
+
+        setFormData(prevFormData => ({
+            ...prevFormData,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    useEffect(() => {
+        const fetchProvinces = async () => {
+            try {
+                const data = await getProvinces();
+                setProvinces(data);
+            } catch (error) {
+                console.error('Error fetching provinces:', error);
+            } finally {
+                setIsLoadingProvinces(false);
+            }
+        };
+        fetchProvinces();
+    }, []);
+
+    useEffect(() => {
+        const fetchDistricts = async () => {
+            if (selectedProvince) {
+                setIsLoadingDistricts(true);
+                const selectedProvinceData = provinces.find(p => p.ProvinceName === selectedProvince);
+                const provinceId = selectedProvinceData ? selectedProvinceData.ProvinceID : null;
+
+                if (provinceId) {
+                    try {
+                        const data = await getDistricts(provinceId);
+                        setDistricts(data);
+                    } catch (error) {
+                        console.error('Error fetching districts:', error);
+                        setDistricts([]);
+                    }
+                }
+            } else {
+                setDistricts([]);
+            }
+            setIsLoadingDistricts(false);
+        };
+        fetchDistricts();
+    }, [selectedProvince, provinces]);
+
+    useEffect(() => {
+        const fetchWards = async () => {
+            if (selectedDistrict) {
+                setIsLoadingWards(true);
+                const districtId = parseInt(selectedDistrict, 10);
+                try {
+                    const data = await getWards(districtId);
+                    setWards(data);
+                } catch (error) {
+                    console.error('Error fetching wards:', error);
+                    setWards([]);
+                }
+                setIsLoadingWards(false);
+            } else {
+                setWards([]);
+            }
+        };
+        fetchWards();
+    }, [selectedDistrict]);
 
     const formatPrice = (price: number): string => {
         return new Intl.NumberFormat("vi-VN", {
@@ -82,57 +177,83 @@ const Checkout: React.FC = () => {
         console.log("Giỏ hàng đã được xóa sau khi thanh toán thành công.");
     };
 
-    // const handleVNPayResponse = async (responseCode: string) => {
-    //     if (responseCode === "00") {  // Payment was successful
-    //         try {
-    //             const queryParams = new URLSearchParams(location.search);
-    //             const response = await fetch(`http://localhost:8080/api/payment-result?${queryParams.toString()}`, {
-    //                 method: "GET",
-    //                 headers: {
-    //                     "Authorization": `Bearer ${token}`,
-    //                 },
-    //             });
 
-    //             if (response.redirected) {
-    //                 window.location.href = response.url;
-    //                 return;
-    //             }
+// Hàm tính phí vận chuyển
+    const calculateShippingFee = async ({ toDistrictId, toWardCode, weight }) => {
+        try {
+            const payload = {
+                shop_id: SHOP_ID,
+                to_district_id: toDistrictId,
+                to_ward_code: toWardCode,
+                weight: weight || 1000, // Trọng lượng mặc định
+                service_type_id: 2, // E-Commerce Delivery
+            };
 
-    //             if (response.ok) {
-    //                 Swal.fire({
-    //                     title: "Thanh toán thành công!",
-    //                     text: "Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn sẽ được xử lý ngay.",
-    //                     icon: "success",
-    //                     confirmButtonText: "OK",
-    //                 }).then(() => {
-    //                     clearCartAfterCheckout();
-    //                     navigate("/user");
-    //                 });
-    //             }
-    //         } catch (error) {
-    //             console.error("Error fetching VNPay return result:", error);
-    //             Swal.fire({
-    //                 title: "Thanh toán thất bại!",
-    //                 text: "Vui lòng thử lại.",
-    //                 icon: "error",
-    //                 confirmButtonText: "OK",
-    //             }).then(() => {
-    //                 navigate("/checkout");
-    //             });
-    //         }
-    //     } else {
-    //         Swal.fire({
-    //             title: "Thanh toán thất bại!",
-    //             text: "Vui lòng thử lại.",
-    //             icon: "error",
-    //             confirmButtonText: "OK",
-    //         }).then(() => {
-    //             navigate("/checkout");
-    //         });
-    //     }
-    // };
+            console.log("Payload gửi đến GHN:", payload);
+
+            const response = await fetch(`https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Token: TOKEN,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Lỗi từ GHN:", errorData);
+                throw new Error(`Lỗi tính phí: ${errorData.message || "Không xác định"}`);
+            }
+
+            const data = await response.json();
+            return data.data.total; // Trả về phí vận chuyển
+        } catch (error) {
+            console.error("Lỗi kết nối API GHN:", error.message);
+            throw error; // Để xử lý tiếp ở phần gọi hàm
+        }
+    };
+
+// Tính lại phí vận chuyển khi người dùng chọn địa chỉ mới
+    useEffect(() => {
+        // Kiểm tra nếu đủ thông tin quận/huyện và phường/xã
+        if (selectedDistrict && formData.ward) {
+            const selectedDistrictObj = districts.find(d => d.DistrictID === parseInt(selectedDistrict, 10));
+            const selectedWardObj = wards.find(w => w.WardCode === formData.ward);
+
+            // Tính phí vận chuyển
+            const fetchShippingFee = async () => {
+                try {
+                    const fee = await calculateShippingFee({
+                        toDistrictId: selectedDistrictObj.DistrictID,
+                        toWardCode: selectedWardObj.WardCode,
+                        weight: 1000, // Trọng lượng giả định
+                    });
+                    setShippingFee(fee);
+                } catch (error) {
+                    console.error("Không thể tính phí vận chuyển:", error.message);
+                    setShippingFee(0); // Nếu có lỗi, để phí vận chuyển bằng 0
+                }
+            };
+
+            fetchShippingFee();
+        }
+    }, [selectedDistrict, formData.ward]); // Chạy lại khi thay đổi district hoặc ward
 
     const handlePayment = async () => {
+        const selectedDistrictObj = districts.find(d => d.DistrictID === parseInt(selectedDistrict, 10));
+        const selectedWardObj = wards.find(w => w.WardCode === formData.ward);
+
+        // Kiểm tra các thông tin cần thiết
+        if (!formData.name || !formData.phone || !formData.address || !selectedProvince || !selectedDistrict || !formData.ward) {
+            Swal.fire({
+                icon: "warning",
+                title: "Thiếu thông tin",
+                text: "Vui lòng cung cấp đầy đủ thông tin địa chỉ giao hàng.",
+            });
+            return;
+        }
+
         if (!selectedPaymentMethod) {
             Swal.fire({
                 icon: "warning",
@@ -141,16 +262,7 @@ const Checkout: React.FC = () => {
             });
             return;
         }
-    
-    if (!address) {
-            Swal.fire({
-                icon: "warning",
-                title: "Thiếu địa chỉ",
-                text: "Vui lòng cung cấp địa chỉ giao hàng.",
-            });
-            return;
-        }
-    
+
         if (products.length === 0) {
             Swal.fire({
                 icon: "warning",
@@ -159,15 +271,44 @@ const Checkout: React.FC = () => {
             });
             return;
         }
-        console.log("Thông tin sản phẩm:", products);
-        console.log("Tổng tiền:", total);
-        console.log("Địa chỉ giao hàng:", address);
-        console.log("User ID:", userId);
-    
+
+        // Tính phí vận chuyển
+        let shippingFee = 0;
+        try {
+            shippingFee = await calculateShippingFee({
+                toDistrictId: selectedDistrictObj.DistrictID,
+                toWardCode: selectedWardObj.WardCode,
+                weight: 1000, // Trọng lượng giả định
+            });
+            console.log("Phí vận chuyển:", shippingFee);
+        } catch (error) {
+            console.error("Không thể tính phí vận chuyển:", error.message);
+            Swal.fire({
+                icon: "error",
+                title: "Lỗi tính phí vận chuyển",
+                text: "Vui lòng kiểm tra lại địa chỉ hoặc thử lại sau.",
+            });
+            return;
+        }
+
+        const totalWithShipping = total + shippingFee;
+
+        const orderData = {
+            products: products.map((productDetail) => ({
+                productDetailId: productDetail.productDetailId,
+                quantity: productDetail.quantity,
+                price: productDetail.price,
+                productName: productDetail.productName,
+            })),
+            total: totalWithShipping,
+            address: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
+            userId: userId,
+        };
+
+        // Xử lý thanh toán COD
         if (selectedPaymentMethod === "cod") {
             try {
                 console.log("Đang tiến hành thanh toán COD...");
-    
                 const response = await fetch("http://localhost:8080/api/checkout", {
                     method: "POST",
                     headers: {
@@ -175,27 +316,16 @@ const Checkout: React.FC = () => {
                         "Authorization": `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                        products: products.map((productDetail) => ({
-                            productDetailId: productDetail.productId,
-                            quantity: productDetail.quantity,
-                            price: productDetail.price,
-                            productName: productDetail.productName,
-                        })),
-                        total: total,
-                        address: address,
-                        userId: userId,
+                        ...orderData,
                         paymentMethod: "COD",
                     }),
                 });
-    
+
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.log("Lỗi khi thanh toán COD:", errorText); // Log lỗi nếu thanh toán thất bại
                     throw new Error(`Thanh toán thất bại: ${errorText}`);
                 }
-    
-                console.log("Thanh toán COD thành công!"); // Log khi thanh toán thành công
-    
+
                 Swal.fire({
                     title: "Thanh toán thành công!",
                     text: "Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn sẽ được xử lý ngay.",
@@ -206,63 +336,81 @@ const Checkout: React.FC = () => {
                     navigate("/user");
                 });
             } catch (error) {
-                console.error("Lỗi khi thanh toán COD:", error);
-                alert(`Thanh toán thất bại: ${error.message}`);
+                console.error("Lỗi khi thanh toán COD:", error.message);
+                Swal.fire({
+                    icon: "error",
+                    title: "Thanh toán thất bại",
+                    text: error.message,
+                });
             }
-        } else if (selectedPaymentMethod === "vnpay") {
+        }
+
+        // Xử lý thanh toán VNPay
+        else if (selectedPaymentMethod === "vnpay") {
             try {
-                console.log("Đang tiến hành thanh toán VNPay...");
-    
-                // VNPay
-                const response1 = await fetch("http://localhost:8080/api/pay", {
+                const paymentResponse = await fetch("http://localhost:8080/api/pay", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                        amount: total + 15000,
+                        amount: totalWithShipping,
                         returnUrl: "http://localhost:5173/user",
                     }),
                 });
-    
-                if (!response1.ok) {
-                    const errorText = await response1.text();
-                    console.log("Lỗi khi gửi yêu cầu thanh toán VNPay:", errorText); // Log lỗi nếu yêu cầu thất bại
-                    throw new Error(`VNPay Payment failed: ${errorText}`);
+
+                if (!paymentResponse.ok) {
+                    const errorText = await paymentResponse.text();
+                    throw new Error(`Thanh toán VNPay thất bại: ${errorText}`);
                 }
-    
-                const response2 = await fetch("http://localhost:8080/api/checkout", {
+
+                const paymentData = await paymentResponse.json();
+                const checkoutResponse = await fetch("http://localhost:8080/api/checkout", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                        products: products.map((productDetail) => ({
-                            productDetailId: productDetail.productId,
-                            quantity: productDetail.quantity,
-                            price: productDetail.price,
-                            productName: productDetail.productName,
-                        })),
-                        total: total,
-                        address: address,
-                        userId: userId,
+                        ...orderData,
                         paymentMethod: "VNPAY",
                     }),
                 });
-    
-                const data = await response1.json();
-                console.log("VNPay Payment URL:", data.paymentUrl); // Log URL của VNPay
-                const paymentUrl = data.paymentUrl;
-                window.location.href = paymentUrl; // Chuyển hướng tới trang thanh toán VNPay
+
+                if (!checkoutResponse.ok) {
+                    const errorText = await checkoutResponse.text();
+                    throw new Error(`Lỗi khi tạo đơn hàng: ${errorText}`);
+                }
+
+                window.location.href = paymentData.paymentUrl; // Chuyển hướng tới trang thanh toán VNPay
             } catch (error) {
-                console.error("Lỗi khi thanh toán VNPay:", error);
-                alert(`Thanh toán VNPay thất bại: ${error.message}`);
+                console.error("Lỗi khi thanh toán VNPay:", error.message);
+                Swal.fire({
+                    icon: "error",
+                    title: "Thanh toán VNPay thất bại",
+                    text: error.message,
+                });
             }
         }
     };
-    
+
+
+
+    const handlePaymentSelect = (method) => {
+        setSelectedPaymentMethod(method);
+    };
+
+    const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedDistrictID = e.target.value;
+        setSelectedDistrict(selectedDistrictID);
+        setFormData(prevFormData => ({
+            ...prevFormData,
+            district: districts.find(d => d.DistrictID === parseInt(selectedDistrictID, 10))?.DistrictName || ''
+        }));
+        setWards([]);
+
+    };
 
     const openModal = () => setModalIsOpen(true);
     const closeModal = () => setModalIsOpen(false);
@@ -293,37 +441,235 @@ const Checkout: React.FC = () => {
 
     return (
         <div>
-            <Header/>
-            <div className="bg-gray-100 min-h-screen p-4">
-                <div className="bg-white shadow-md rounded-lg p-6">
-                    <div className="flex items-center mb-4">
-                        <h1 className="text-2xl font-bold text-[#00b7c0]">Thanh Toán</h1>
-                    </div>
-
+            <Header />
+            <div className="bg-gray-100 min-h-screen p-4 flex gap-6">
+                {/* Bên trái: Thông tin địa chỉ và thanh toán */}
+                <div className="w-2/4 bg-white shadow-md rounded-lg p-6">
                     {/* Địa chỉ giao hàng */}
-                    <div className="border-t border-b py-4 mb-4">
-                        <div className="flex items-center mb-2">
-                            <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                            <span className="font-bold">Địa Chỉ Nhận Hàng</span>
-                        </div>
-                        <div className="ml-6">
-                            {/*<p className="font-bold mb-2"></p>*/}
-                            <p className="font-bold mb-2">
-                                {loading ? "Loading..." : address || "Chưa có địa chỉ nào."}
-                            </p>
-                            <button onClick={openModal} className="text-blue-500">
-                                Thay Đổi
-                            </button>
+                    <div className="border-b pb-4 mb-4">
+                        <h2 className="text-xl font-bold text-[#00b7c0] mb-2">
+                            Địa Chỉ Nhận Hàng
+                        </h2>
+                        <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow-md">
+                            {/* Họ và Tên và Số điện thoại */}
+                            <div className="flex mb-4 space-x-4">
+                                <div className="flex-1">
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                        Họ và Tên:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="name"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                                        Số điện thoại:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="phone"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Địa chỉ cụ thể */}
+                            <div className="mb-4">
+                                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                                    Địa chỉ cụ thể:
+                                </label>
+                                <input
+                                    type="text"
+                                    id="address"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    required
+                                />
+                            </div>
+
+                            {/* Tỉnh/Thành phố, Quận/Huyện, Phường/Xã */}
+                            <div className="flex mb-4 space-x-4">
+                                <div className="flex-1">
+                                    <label htmlFor="province" className="block text-sm font-medium text-gray-700">
+                                        Tỉnh/Thành phố:
+                                    </label>
+                                    <select
+                                        id="province"
+                                        name="province"
+                                        value={selectedProvince}
+                                        onChange={(e) => {
+                                            setSelectedProvince(e.target.value);
+                                            setSelectedDistrict('');
+                                            setFormData((prev) => ({...prev, ward: ''}));
+                                        }}
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required
+                                    >
+                                        <option value="">Chọn tỉnh/thành phố</option>
+                                        {provinces.map((province) => (
+                                            <option key={province.ProvinceID} value={province.ProvinceName}>
+                                                {province.ProvinceName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex-1">
+                                    <label htmlFor="district" className="block text-sm font-medium text-gray-700">
+                                        Quận/Huyện:
+                                    </label>
+                                    <select
+                                        id="district"
+                                        name="district"
+                                        value={selectedDistrict}
+                                        onChange={handleDistrictChange}
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required
+                                        disabled={!selectedProvince}
+                                    >
+                                        <option value="">Chọn quận/huyện</option>
+                                        {districts.map((district) => (
+                                            <option key={district.DistrictID} value={district.DistrictID}>
+                                                {district.DistrictName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex-1">
+                                    <label htmlFor="ward" className="block text-sm font-medium text-gray-700">
+                                        Phường/Xã:
+                                    </label>
+                                    <select
+                                        id="ward"
+                                        name="ward"
+                                        value={formData.ward}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required
+                                        disabled={!selectedDistrict}
+                                    >
+                                        <option value="">Chọn phường/xã</option>
+                                        {wards.map((ward) => (
+                                            <option key={ward.WardCode} value={ward.WardCode}>
+                                                {ward.WardName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+
+
+                    </div>
+
+                    {/* Phương thức thanh toán */}
+                    <div className="border-b pb-4 mb-4">
+                        <h2 className="text-xl font-bold text-[#00b7c0] mb-2">
+                            Phương Thức Thanh Toán
+                        </h2>
+
+                        {/* Hiển thị phương thức thanh toán đã chọn */}
+                        <p className="mb-4">
+                            {selectedPaymentMethod === "cod"
+                                ? "Thanh toán khi nhận hàng (COD)"
+                                : selectedPaymentMethod === "vnpay"
+                                    ? "Thanh toán bằng VNPay"
+                                    : "Chưa chọn phương thức thanh toán"}
+                        </p>
+
+                        {/* Các ô chọn phương thức thanh toán */}
+                        <div className="space-y-4">
+                            {/* Ô chọn COD */}
+                            <div
+                                className={`border p-4 rounded-md cursor-pointer flex items-center ${selectedPaymentMethod === "cod" ? "border-[#00b7c0]" : "border-gray-300"
+                                }`}
+                                onClick={() => handlePaymentSelect("cod")}
+                            >
+                                <div className="custom-radio mr-2">
+                                    <input
+                                        type="radio"
+                                        id="cod"
+                                        name="paymentMethod"
+                                        checked={selectedPaymentMethod === "cod"}
+                                        onChange={() => handlePaymentSelect("cod")}
+                                        className="hidden"
+                                    />
+                                    <div
+                                        className={`w-5 h-5 border-2 rounded-full ${selectedPaymentMethod === "cod" ? "bg-[#00b7c0]" : "border-gray-300"}`}
+                                    ></div>
+                                </div>
+                                <img
+                                    src="https://hstatic.net/0/0/global/design/seller/image/payment/cod.svg?v=6"
+                                    alt="COD"
+                                    className="w-6 h-6 mr-2"
+                                />
+                                <label htmlFor="cod" className="font-medium">
+                                    Thanh toán khi giao hàng (COD)
+                                </label>
+                            </div>
+
+                            {/* Ô chọn VNPay */}
+                            <div
+                                className={`border p-4 rounded-md cursor-pointer flex items-center ${selectedPaymentMethod === "vnpay" ? "border-[#00b7c0]" : "border-gray-300"
+                                }`}
+                                onClick={() => handlePaymentSelect("vnpay")}
+                            >
+                                <div className="custom-radio mr-2">
+                                    <input
+                                        type="radio"
+                                        id="vnpay"
+                                        name="paymentMethod"
+                                        checked={selectedPaymentMethod === "vnpay"}
+                                        onChange={() => handlePaymentSelect("vnpay")}
+                                        className="hidden"
+                                    />
+                                    <div
+                                        className={`w-5 h-5 border-2 rounded-full ${selectedPaymentMethod === "vnpay" ? "bg-[#00b7c0]" : "border-gray-300"}`}
+                                    ></div>
+                                </div>
+                                <img
+                                    src="https://stcd02206177151.cloud.edgevnpay.vn/assets/images/logo-icon/logo-primary.svg"
+                                    alt="VNPay"
+                                    className="w-6 h-6 mr-2"
+                                />
+                                <label htmlFor="vnpay" className="font-medium">
+                                    Thanh toán bằng VNPay
+                                </label>
+                            </div>
                         </div>
                     </div>
 
+
+                </div>
+
+                {/* Bên phải: Danh sách sản phẩm */}
+                <div className="w-3/4 bg-white shadow-md rounded-lg p-6">
                     {/* Danh sách sản phẩm */}
                     <div>
+                        <h2 className="text-xl font-bold text-[#00b7c0] mb-4">
+                            Danh Sách Sản Phẩm
+                        </h2>
                         <table className="w-full table-auto mb-4">
                             <thead>
-                            <tr className="border-b-2 border-[#F2BC27] font-bold text-xl">
+                            <tr className="border-b-2 border-[#F2BC27] font-bold text-lg">
                                 <th className="p-2 text-left">Sản phẩm</th>
                                 <th className="p-2 text-left">Đơn giá</th>
+                                <th className="p-2 text-left">Màu sắc</th>
+                                <th className="p-2 text-left">Kích thước</th>
+                                <th className="p-2 text-left">Cân nặng</th>
                                 <th className="p-2 text-left">Số lượng</th>
                                 <th className="p-2 text-right">Thành tiền</th>
                             </tr>
@@ -340,7 +686,10 @@ const Checkout: React.FC = () => {
                                         <span>{product.productName}</span>
                                     </td>
                                     <td className="p-2">{formatPrice(product.price)}</td>
-                                    <td className="p-8 text-left">{product.quantity}</td>
+                                    <td className="p-2">{product.color}</td>
+                                    <td className="p-2">{product.size}</td>
+                                    <td className="p-2">{product.weight} kg</td>
+                                    <td className="p-2">{product.quantity}</td>
                                     <td className="p-2 text-right font-bold">
                                         {formatPrice(product.price * product.quantity)}
                                     </td>
@@ -350,212 +699,44 @@ const Checkout: React.FC = () => {
                         </table>
                     </div>
 
-                    {/* Voucher */}
+                    {/* Mã giảm giá */}
                     <div className="border-b pb-4 mb-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center">
-                                <i className="fas fa-ticket-alt text-red-500 mr-2"></i>
-                                <span className="text-lg">PetCare Voucher</span>
-                            </div>
-                            <a href="#" className="text-blue-500">
-                                Chọn Voucher
-                            </a>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center">
-                                <i className="fas fa-coins text-yellow-500 mr-2"></i>
-                                <span className="text-lg">PetCare Xu</span>
-                            </div>
-                            <span className="text-gray-500">Không thể sử dụng Xu</span>
-                        </div>
-                    </div>
-
-                    {/* Phương thức thanh toán */}
-                    <div className="border-b pb-4 mb-4">
-                        <div className="text-lg font-semibold mb-2">Phương thức thanh toán</div>
-                        <div className="flex justify-between items-center">
-                            <span>
-                                {selectedPaymentMethod === "cod"
-                                    ? "Thanh toán khi nhận hàng"
-                                    : selectedPaymentMethod === "vnpay"
-                                        ? "Thanh toán bằng VNPay"
-                                        : "Chưa chọn phương thức thanh toán"}
-                            </span>
-                            <button onClick={() => setPaymentModalOpen(true)} className="text-blue-500">
-                                THAY ĐỔI
+                    <h3 className="text-lg font-bold text-[#00b7c0] mb-2">Mã Giảm Giá</h3>
+                        <div className="flex">
+                            <input
+                                type="text"
+                                placeholder="Nhập mã giảm giá"
+                                className="border border-gray-300 rounded-lg p-2 w-full"
+                            />
+                            <button className="bg-[#00b7c0] text-white px-4 rounded-lg ml-2">
+                                Áp dụng
                             </button>
                         </div>
                     </div>
 
-                    {/* Modal to select payment method */}
-                    <Modal
-                        isOpen={paymentModalOpen}
-                        onRequestClose={() => setPaymentModalOpen(false)}
-                        contentLabel="Payment Modal"
-                        ariaHideApp={false}
-                        style={{
-                            content: {
-                                width: "50%",
-                                maxWidth: "600px",
-                                height: "250px", // Adjust height based on content
-                                margin: "auto",
-                                borderRadius: "10px",
-                                padding: "30px",
-                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", // Subtle shadow for depth
-                                display: "flex", // Align modal content vertically
-                                flexDirection: "column",
-                                justifyContent: "center",
-                            },
-                        }}
-                    >
-                        <div className="modal-content">
-                            {/* Modal Header */}
-                            <div className="modal-header">
-                                <h2 className="text-xl font-bold text-center">Chọn phương thức thanh toán</h2>
-                                {/*<button className="modal-close" onClick={() => setPaymentModalOpen(false)}>*/}
-                                {/*    &times;*/}
-                                {/*</button>*/}
-                            </div>
-
-                            {/* Payment Options */}
-                            <div className="payment-options mt-4">
-                                {/* Cash on Delivery (COD) */}
-                                <div className="payment-option">
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={selectedPaymentMethod === "cod"}
-                                            onChange={() => setSelectedPaymentMethod("cod")}
-                                            className="mr-2"
-                                        />
-                                        Thanh toán khi nhận hàng
-                                    </label>
-                                </div>
-
-                                {/* VNPay Payment */}
-                                <div className="payment-option mt-2">
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            checked={selectedPaymentMethod === "vnpay"}
-                                            onChange={() => setSelectedPaymentMethod("vnpay")}
-                                            className="mr-2"
-                                        />
-                                        Thanh toán bằng VNPay
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Confirm and Close Modal */}
-                            <div className="modal-footer flex justify-end mt-6">
-                                {/* Cancel Button */}
-                                <button
-                                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition mr-4" // Added margin right for spacing
-                                    onClick={() => setPaymentModalOpen(false)}
-                                >
-                                    Hủy
-                                </button>
-
-                                {/* Confirm Button */}
-                                <button
-                                    onClick={() => setPaymentModalOpen(false)} // Close the modal after selecting
-                                    className="bg-[#00b7c0] text-white px-6 py-2 rounded-lg hover:bg-[#41797c] transition"
-                                >
-                                    Xác nhận
-                                </button>
-                            </div>
-
-                        </div>
-                    </Modal>
-
-
-                    {/* Tổng số tiền */}
-                    <div className="bg-gray-50 p-4 mb-4">
+                    {/* Tổng cộng */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex justify-between items-center mb-4">
-                            <span>Tổng tiền hàng</span>
+                            <span className="font-semibold">Tổng tiền hàng</span>
                             <span>{formatPrice(total)}</span>
                         </div>
-                        <div className="flex justify-between items-center mb-2">
-                            <span>Phí vận chuyển</span>
-                            <span>15.000 ₫</span> {/* Static for now */}
-                            {/*<span>{formatPrice(shippingFee)}</span>*/}
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="font-semibold">Phí vận chuyển</span>
+                            <span>{formatPrice(shippingFee)}</span> {/* Hiển thị phí vận chuyển từ state */}
                         </div>
-                    </div>
-                    {/* Tổng cộng */}
-                    <div className="mt-6 text-right">
-                        <h2 className="text-xl font-bold text-red-500">
-                            Tổng cộng: {formatPrice(total + 15000)}
-                            {/*Tổng cộng: {formatPrice(total + shippingFee)}*/}
-                        </h2>
+                        <div className="flex justify-between items-center font-bold text-xl text-red-500">
+                            <span>Tổng cộng</span>
+                            <span>{formatPrice(total + shippingFee)}</span> {/* Cộng phí vận chuyển vào tổng cộng */}
+                        </div>
                         <button
                             onClick={handlePayment}
-                            className="bg-[#00b7c0] text-white px-6 py-2 rounded-lg hover:bg-[#41797c] transition duration-300 mt-4"
+                            className="w-full bg-[#00b7c0] text-white px-6 py-2 rounded-lg hover:bg-[#41797c] transition mt-4"
                         >
                             Đặt hàng
                         </button>
                     </div>
-                    <div className="text-center text-gray-500 text-sm mt-4">
-                        Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo{" "}
-                        <a href="#" className="text-blue-500">
-                            Điều khoản PetCare
-                        </a>
-                    </div>
                 </div>
             </div>
-
-            {/* Modal để chọn địa chỉ */}
-            <Modal
-                isOpen={modalIsOpen}
-                onRequestClose={closeModal}
-                contentLabel="Chọn Địa Chỉ"
-                ariaHideApp={false}
-                style={{
-                    content: {
-                        width: "60%", // Tăng kích thước modal
-                        maxWidth: "700px", // Đảm bảo modal không quá lớn
-                        height: "80%", // Tăng chiều cao của modal
-                        margin: "auto", // Canh giữa modal
-                        borderRadius: "10px", // Bo góc nhẹ
-                        padding: "20px", // Thêm khoảng cách bên trong modal
-                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)", // Thêm shadow để modal nổi bật hơn
-                    },
-                }}
-            >
-                <div className="modal-header">
-                    <h2 className="text-xl font-bold text-center">
-                        Chọn Địa Chỉ Giao Hàng
-                    </h2>
-                </div>
-                <div className="modal-body">
-                    <AddressModal
-                        isOpen={modalIsOpen}
-                        onClose={closeModal}
-                        userId={userId}
-                        onAddressSelected={(addressId) => {
-                            // Fetch the full address from the API based on the addressId
-                            fetch(`http://localhost:8080/api/addresses/${addressId}`, {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            })
-                                .then((res) => {
-                                    if (!res.ok) {
-                                        throw new Error("Network response was not ok");
-                                    }
-                                    return res.json();
-                                })
-                                .then((data) => setAddress(data)) // Store the whole address object
-                                .catch((error) =>
-                                    console.error("Error fetching address:", error)
-                                );
-                            setRefreshCheckout((prev) => prev + 1);
-                        }}
-                        currentCheckoutAddressId={address?.addressId ?? null}
-                    />
-                </div>
-            </Modal>
         </div>
     );
 };

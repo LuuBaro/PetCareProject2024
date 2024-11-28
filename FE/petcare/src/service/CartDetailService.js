@@ -4,21 +4,31 @@ import toastr from 'toastr';
 const API_URL = 'http://localhost:8080/api/cart';
 
 // Hàm thêm sản phẩm vào giỏ hàng
-const addToCart = async (productDetailId, quantity, userId, token, productName, stockAvailable) => {
+const addToCart = async (
+    productDetailId,
+    quantity,
+    userId,
+    token,
+    productName,
+    stockAvailable,
+    selectedColor = null,
+    selectedSize = null,
+    selectedWeight = null
+) => {
     try {
-        console.log(`quantity: ${quantity}, stockAvailable: ${stockAvailable}`); // Kiểm tra giá trị
-
-        // Kiểm tra nếu sản phẩm còn hàng
-        if (stockAvailable <= 0) {
-            toastr.error(`Sản phẩm ${productName} đã hết hàng.`);
-            return; // Kết thúc hàm nếu hết hàng
+        // Kiểm tra giá trị stockAvailable
+        if (stockAvailable === undefined || stockAvailable <= 0) {
+            toastr.error(`Sản phẩm ${productName} đã hết hàng hoặc thông tin tồn kho không hợp lệ.`);
+            return;
         }
+
+        console.log(`quantity: ${quantity}, stockAvailable: ${stockAvailable}`); // Kiểm tra giá trị
 
         // Kiểm tra số lượng nhập vào không hợp lệ
         const validQuantity = Math.max(1, Math.min(quantity, stockAvailable));
         if (validQuantity !== quantity) {
             toastr.error(`Số lượng nhập vào không hợp lệ. Bạn chỉ có thể thêm tối đa ${stockAvailable} sản phẩm ${productName}.`);
-            return; // Kết thúc hàm nếu số lượng vượt quá số lượng có sẵn
+            return;
         }
 
         // Gửi yêu cầu thêm sản phẩm vào giỏ hàng
@@ -26,6 +36,9 @@ const addToCart = async (productDetailId, quantity, userId, token, productName, 
             productDetailId: productDetailId,
             quantityItem: validQuantity,
             userId: userId,
+            selectedColor: selectedColor, // Thêm màu sắc vào payload
+            selectedSize: selectedSize,   // Thêm kích thước vào payload
+            selectedWeight: selectedWeight, // Thêm trọng lượng vào payload
         }, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -47,6 +60,7 @@ const addToCart = async (productDetailId, quantity, userId, token, productName, 
         throw error;
     }
 };
+
 
 // Hàm kiểm tra giỏ hàng trước khi thanh toán
 const checkoutCart = (quantity, stockAvailable, productName) => {

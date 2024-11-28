@@ -1,11 +1,34 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FiChevronDown, FiChevronUp, FiHome, FiUser, FiBox, FiPackage, FiLayers } from "react-icons/fi"; // Import icons
-import logo from '/src/assets/logo.png';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+    FiChevronDown,
+    FiChevronUp,
+    FiHome,
+    FiUser,
+    FiBox,
+    FiPackage,
+} from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import logo from "/src/assets/logo.png";
 
 const SidebarMenu = () => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Kiểm tra trạng thái đăng nhập từ localStorage
+        const userId = localStorage.getItem("userId");
+        setIsLoggedIn(!!userId);
+    }, []);
+
+    const handleLogout = () => {
+        // Xóa userId khỏi localStorage và điều hướng đến trang đăng nhập
+        localStorage.removeItem("userId");
+        setIsLoggedIn(false);
+        navigate("/login");
+    };
 
     const toggleUserDropdown = () => {
         setIsUserDropdownOpen(!isUserDropdownOpen);
@@ -15,96 +38,205 @@ const SidebarMenu = () => {
         setIsProductDropdownOpen(!isProductDropdownOpen);
     };
 
+    const dropdownVariants = {
+        hidden: { opacity: 0, height: 0 },
+        visible: { opacity: 1, height: "auto" },
+        exit: { opacity: 0, height: 0 },
+    };
+
     return (
-        <>
-            <div className="p-6 text-3xl font-bold text-white bg-[#00B7C0] relative shadow-lg">
-                <img src={logo} alt="Logo"/>
+        <div className="flex flex-col w-64 h-screen bg-gradient-to-b from-gray-700 via-gray-800 to-gray-900 text-white shadow-lg">
+            {/* Logo Section */}
+            <div className="flex items-center justify-center h-20 bg-gray-800 shadow-md">
+                <img src={logo} alt="Logo" className="w-10/12 h-12" />
             </div>
 
-            <nav className="bg-[#00B7C0] relative text-gray-200 h-full overflow-y-auto">
-                <ul className="space-y-1 p-4">
-                    <li className="flex items-center p-3 rounded-md hover:bg-indigo-600 hover:text-white transition duration-300">
-                        <FiHome className="mr-3"/>
-                        <Link to="/" className="w-full">Dashboard</Link>
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto px-4 py-6">
+                <ul className="space-y-2">
+                    {/* Dashboard */}
+                    <li>
+                        <Link
+                            to="/"
+                            className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
+                        >
+                            <FiHome className="w-5 h-5 mr-3" />
+                            <span>Trang tổng quan</span>
+                        </Link>
                     </li>
 
                     {/* User Management Dropdown */}
-                    <li className="p-3">
+                    <li>
                         <div
-                            className="flex items-center justify-between cursor-pointer hover:bg-[#00B7C0] relative hover:text-white transition duration-300 p-3 rounded-md"
+                            className="flex items-center justify-between p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 cursor-pointer transition duration-300"
                             onClick={toggleUserDropdown}
                         >
                             <div className="flex items-center">
-                                <FiUser className="mr-3"/>
-                                <span>Quản lý người dùng</span>
+                                <FiUser className="w-5 h-5 mr-3" />
+                                <span>Quản lý tài khoản</span>
                             </div>
-                            {isUserDropdownOpen ? <FiChevronUp/> : <FiChevronDown/>}
+                            {isUserDropdownOpen ? (
+                                <FiChevronUp className="w-4 h-4" />
+                            ) : (
+                                <FiChevronDown className="w-4 h-4" />
+                            )}
                         </div>
-                        {isUserDropdownOpen && (
-                            <ul className="ml-6 mt-2 space-y-2">
-                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/user" className="w-full">Quản lý Nhân viên</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/client" className="w-full">Danh sách người dùng</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/roles" className="w-full">Quản lý Role</Link>
-                                </li>
-                            </ul>
-                        )}
+                        <AnimatePresence>
+                            {isUserDropdownOpen && (
+                                <motion.ul
+                                    className="mt-2 ml-6 space-y-2"
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    variants={dropdownVariants}
+                                >
+                                    <li>
+                                        <Link
+                                            to="/user"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Danh sách người dùng
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/roles"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Phân quyền
+                                        </Link>
+                                    </li>
+                                </motion.ul>
+                            )}
+                        </AnimatePresence>
                     </li>
 
                     {/* Product Management Dropdown */}
-                    <li className="p-3">
+                    <li>
                         <div
-                            className="flex items-center justify-between cursor-pointer hover:bg-[#00B7C0] relative hover:text-white transition duration-300 p-3 rounded-md"
+                            className="flex items-center justify-between p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 cursor-pointer transition duration-300"
                             onClick={toggleProductDropdown}
                         >
                             <div className="flex items-center">
-                                <FiBox className="mr-3"/>
+                                <FiBox className="w-5 h-5 mr-3" />
                                 <span>Quản lý sản phẩm</span>
                             </div>
-                            {isProductDropdownOpen ? <FiChevronUp/> : <FiChevronDown/>}
+                            {isProductDropdownOpen ? (
+                                <FiChevronUp className="w-4 h-4" />
+                            ) : (
+                                <FiChevronDown className="w-4 h-4" />
+                            )}
                         </div>
-                        {isProductDropdownOpen && (
-                            <ul className="ml-6 mt-2 space-y-2">
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/products" className="w-full">Quản lý sản phẩm</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/product-details" className="w-full">Quản lý biến thể</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/brands" className="w-full">Quản lý thương hiệu</Link>
-                                </li>
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/product-color" className="w-full">Quản lý màu sắc</Link>
-                                </li>
-                                {/*<li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">*/}
-                                {/*    <Link to="/product-image" className="w-full">Quản lý hình</Link>*/}
-                                {/*</li>*/}
-                                <li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">
-                                    <Link to="/product-size" className="w-full">Quản lý kích thước</Link>
-                                </li>
-                                {/*<li className="flex items-center p-3 hover:bg-indigo-500 rounded-md transition duration-300">*/}
-                                {/*    <Link to="/product-weights" className="w-full">Quản lý cân nặng</Link>*/}
-                                {/*</li>*/}
-                                <li className="flex items-center p-3 hover:bg-[#00B7C0] relative rounded-md transition duration-300">
-                                    <Link to="/product-categories" className="w-full">Quản lý loại</Link>
-                                </li>
-                            </ul>
-                        )}
+                        <AnimatePresence>
+                            {isProductDropdownOpen && (
+                                <motion.ul
+                                    className="mt-2 ml-6 space-y-2"
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    variants={dropdownVariants}
+                                >
+                                    <li>
+                                        <Link
+                                            to="/products"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Danh sách sản phẩm
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-details"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Quản lý biến thể
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/brands"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Thương hiệu
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-color"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Màu sắc
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-image"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Hình ảnh
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-size"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Kích thước
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-weights"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Cân nặng
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/product-categories"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Danh mục
+                                        </Link>
+                                    </li>
+                                </motion.ul>
+                            )}
+                        </AnimatePresence>
                     </li>
 
-                    {/* Order Management Link */}
-                    <li className="flex items-center p-3 rounded-md hover:bg-indigo-600 hover:text-white transition duration-300">
-                        <FiPackage className="mr-3"/>
-                        <Link to="/product-inventory" className="w-full">Quản lý đơn hàng</Link>
+                    {/* Order Management */}
+                    <li>
+                        <Link
+                            to="/product-inventory"
+                            className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
+                        >
+                            <FiPackage className="w-5 h-5 mr-3" />
+                            <span>Quản lý đơn hàng</span>
+                        </Link>
                     </li>
                 </ul>
             </nav>
-        </>
+
+            {/* Footer */}
+            <div className="p-4 bg-gray-800">
+                {isLoggedIn ? (
+                    <button
+                        onClick={handleLogout}
+                        className="block w-full text-center text-gray-400 hover:underline"
+                    >
+                        Đăng xuất
+                    </button>
+                ) : (
+                    <Link
+                        to="/login"
+                        className="block text-center text-gray-400 hover:underline"
+                    >
+                        Đăng nhập
+                    </Link>
+                )}
+            </div>
+        </div>
     );
 };
 

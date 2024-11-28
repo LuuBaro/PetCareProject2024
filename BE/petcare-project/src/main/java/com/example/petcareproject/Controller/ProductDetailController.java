@@ -56,14 +56,16 @@ public class ProductDetailController {
     }
 
     @GetMapping("/by-product/{productId}")
-    public ResponseEntity<ProductDetail> getProductDetailByProductId(@PathVariable Long productId) {
-        ProductDetail productDetail = productDetailService.getProductDetailByProductId(productId);
-        if (productDetail != null) {
-            return new ResponseEntity<>(productDetail, HttpStatus.OK);
+    public ResponseEntity<List<ProductDetail>> getAllProductDetailsByProductId(@PathVariable Long productId) {
+        List<ProductDetail> productDetails = productDetailService.getProductDetailsByProductId(productId);
+        if (!productDetails.isEmpty()) {
+            return new ResponseEntity<>(productDetails, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+
 
 
 

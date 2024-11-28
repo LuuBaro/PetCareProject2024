@@ -22,14 +22,8 @@ import ManageRole from "../components/Manage/ManageRole";
 function Admin() {
   return (
     <Router>
-      <div className="flex flex-col h-screen bg-gray-100">
-        {/* TopBar will take full width at the top */}
-        <header className="w-full shadow-lg bg-white ">
-          <TopBar />
-        </header>
-
+      <div className="flex flex-col h-screen bg-gray-100 font-sans">
         <div className="flex flex-1 lg:flex-row sm:flex-col overflow-hidden">
-          {/* SidebarMenu for navigation, responsive */}
           <aside className="lg:w-1/6 sm:w-full bg-white shadow-md">
             <SidebarMenu />
           </aside>
@@ -51,7 +45,7 @@ function Admin() {
               <Route path="/product-color" element={<ManageProductColors />} /> {/* Add this route */}
               <Route path="/product-image" element={<ManageProductImages />} /> {/* Add this route */}
               <Route path="/product-size" element={<ProductSizeManager />} /> {/* Add this route */}
-              
+
               <Route path="/product-weights" element={<ManageWeights />} /> {/* Add this route */}
               <Route path="/product-inventory" element={<ManageInventory />} /> {/* Add this route */}
             </Routes>

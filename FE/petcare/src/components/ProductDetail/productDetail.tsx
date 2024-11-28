@@ -1,312 +1,300 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ProductDetailService from "../../service/ProductDetailService";
-import ProductService from "../../service/ProductService";
+import ProductColorService from "../../service/ProductColorsService";
+import ProductSizeService from "../../service/ProductSizesService";
+import ProductWeightService from "../../service/ProductWeightsService";
 import CartService from "../../service/CartDetailService";
-import Header from "../header/Header";
-import ProductItem from "../product/ProductItem"; // Import ProductItem
 import toastr from "toastr";
 import "toastr/build/toastr.min.css";
-import $ from "jquery";
+import Header from "../header/Header";
 import Footer from "../footer/Footer";
-import { useNavigate } from "react-router-dom";
+import "../../css/ProductDetail.css";
+
 toastr.options.timeOut = 2000;
 
 const ProductDetail = () => {
   const { id: productId } = useParams();
-  const [productDetail, setProductDetail] = useState(null);
+  const [productDetails, setProductDetails] = useState([]);
+  const [colors, setColors] = useState([]);
+  const [sizes, setSizes] = useState([]);
+  const [weights, setWeights] = useState([]);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedWeight, setSelectedWeight] = useState(null);
+  const [currentDetail, setCurrentDetail] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [stockAvailable, setStockAvailable] = useState(0);
-  const [cartItems, setCartItems] = useState([]);
-  const [allProducts, setAllProducts] = useState([]);
-
-  // Khai báo useNavigate
   const navigate = useNavigate();
-
+  const [stockAvailable, setStockAvailable] = useState(0);
   useEffect(() => {
-    const fetchProductDetail = async () => {
+    const fetchProductDetails = async () => {
       setLoading(true);
       try {
-        const response =
-          await ProductDetailService.getProductDetailsByProductId(productId);
-        if (!response) {
-          throw new Error("Không tìm thấy sản phẩm");
+        const response = await ProductDetailService.getAllProductDetailsByProductId(productId);
+        console.log("Product details response:", response); // Kiểm tra toàn bộ response
+
+        const colorsResponse = await ProductColorService.getAllProductColors();
+        const sizesResponse = await ProductSizeService.getAllProductSizes();
+        const weightsResponse = await ProductWeightService.getAllProductWeights();
+
+        // Kiểm tra xem response có chứa bất kỳ phần tử nào hay không
+        if (response && response.length > 0) {
+          // Duyệt qua tất cả các phần tử trong response để lấy quantity
+          const allQuantities = response.map((detail) => detail.quantity);
+          console.log("All quantities:", allQuantities); // In ra tất cả các quantity
+
+          // Lưu tất cả giá trị quantity vào state (nếu cần thiết)
+          setStockAvailable(allQuantities);
+
+          setProductDetails(response || []);
+          setCurrentDetail(response[0]); // Giả sử response[0] có chứa stockAvailable
+        } else {
+          toastr.error("Không tìm thấy thông tin chi tiết sản phẩm.");
         }
-        setProductDetail(response);
-        setStockAvailable(response.quantity);
-        setQuantity(1);
+
+        setColors(colorsResponse || []);
+        setSizes(sizesResponse || []);
+        setWeights(weightsResponse || []);
       } catch (error) {
-        const errorMessage = error.message || "Lỗi khi lấy thông tin sản phẩm.";
-        setError(errorMessage);
-        toastr.error(errorMessage);
+        setError(error.message || "Error loading product details.");
+        toastr.error(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProductDetail();
+    fetchProductDetails();
   }, [productId]);
 
+
+
+  // Handle selection and update current detail
+  const handleSelection = (type, value) => {
+    if (type === "color") {
+      setSelectedColor(value === selectedColor ? null : value); // Toggle selection
+    } else if (type === "size") {
+      setSelectedSize(value === selectedSize ? null : value); // Toggle selection
+    } else if (type === "weight") {
+      setSelectedWeight(value === selectedWeight ? null : value); // Toggle selection
+    }
+  };
+
+  // Update current detail based on selected attributes
   useEffect(() => {
-    const loadCart = async () => {
-      try {
-        const response = await CartService.getCartItems();
-        setCartItems(response.data || []);
-      } catch (error) {
-        console.error("Error loading cart:", error);
-      }
-    };
-
-    loadCart();
-  }, []);
-
-  useEffect(() => {
-    const fetchAllProducts = async () => {
-      try {
-        const response = await ProductService.getAllProducts();
-        setAllProducts(response.data || []);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-
-    fetchAllProducts();
-  }, []);
-
-  const getProductQuantityInCart = () => {
-    const cartItem = cartItems.find(
-      (item) => item.productDetailId === productDetail.productDetailId
+    const matchingDetail = productDetails.find(
+        (detail) =>
+            (!selectedColor || detail.productColor.color === selectedColor) &&
+            (!selectedSize || detail.productSize.productSize === selectedSize) &&
+            (!selectedWeight || detail.productWeight.weightValue === selectedWeight)
     );
-    return cartItem ? cartItem.quantity : 0;
+
+    setCurrentDetail(matchingDetail || null);
+  }, [selectedColor, selectedSize, selectedWeight, productDetails]);
+
+  const getFilteredOptions = () => {
+    const filteredDetails = productDetails.filter(
+        (detail) =>
+            (!selectedColor || detail.productColor.color === selectedColor) &&
+            (!selectedSize || detail.productSize.productSize === selectedSize) &&
+            (!selectedWeight || detail.productWeight.weightValue === selectedWeight)
+    );
+
+    const validColors = [...new Set(filteredDetails.map((detail) => detail.productColor.color))];
+    const validSizes = [...new Set(filteredDetails.map((detail) => detail.productSize.productSize))];
+    const validWeights = [...new Set(filteredDetails.map((detail) => detail.productWeight.weightValue))];
+
+    return { validColors, validSizes, validWeights };
   };
 
-  const handleQuantityChange = (e) => {
-    let value = parseInt(e.target.value);
-    if (value < 0) {
-      value = 0;
-    }
-    if (value > stockAvailable) {
-      toastr.error(`Bạn chỉ có thể thêm tối đa ${stockAvailable} sản phẩm.`);
-      $("body").append(
-        `<div class="toast toast-error">Bạn chỉ có thể thêm tối đa ${stockAvailable} sản phẩm.</div>`
-      );
-      $(".toast")
-        .fadeIn()
-        .delay(3000)
-        .fadeOut(function () {
-          $(this).remove();
-        });
-    }
-    setQuantity(Math.min(value, stockAvailable));
+  const { validColors, validSizes, validWeights } = getFilteredOptions();
 
-    if (value === 0) {
-      toastr.error("Sản phẩm đã hết hàng.");
-      $("body").append(
-        `<div class="toast toast-error">Sản phẩm đã hết hàng.</div>`
-      );
-      $(".toast")
-        .fadeIn()
-        .delay(3000)
-        .fadeOut(function () {
-          $(this).remove();
-        });
-    }
+  const updateQuantity = (action) => {
+    setQuantity((prev) => (action === "increment" ? prev + 1 : Math.max(prev - 1, 1)));
   };
 
-  const handleAddToCart = async (productDetailId) => {
+  // const getProductQuantityInCart = async (productDetailId) => {
+  //   try {
+  //     const cartItems = await CartService.getCartItems(localStorage.getItem("userId"));
+  //     const item = cartItems.find((cartItem) => cartItem.productDetailId === productDetailId);
+  //     return item ? item.quantity : 0; // Trả về số lượng hiện tại hoặc 0 nếu chưa có trong giỏ
+  //   } catch (error) {
+  //     console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
+  //     return 0;
+  //   }
+  // };
+
+  const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
 
-    // Nếu chưa đăng nhập, điều hướng tới trang đăng nhập
+    // Kiểm tra người dùng đã đăng nhập hay chưa
     if (!token) {
       toastr.error("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.");
-      window.location.href = "/login"; // Điều hướng về trang đăng nhập
+      window.location.href = "/login";
       return;
     }
 
-    const totalQuantityInCart = getProductQuantityInCart() + quantity;
-    if (totalQuantityInCart > stockAvailable) {
-      toastr.error(
-        `Số lượng trong giỏ hàng đã vượt quá ${stockAvailable} sản phẩm.`
-      );
+    // Kiểm tra người dùng đã chọn đầy đủ các biến thể chưa
+    if (!currentDetail) {
+      toastr.error("Vui lòng chọn đầy đủ các biến thể sản phẩm.");
+      return;
+    }
+
+    // Kiểm tra số lượng có hợp lệ không
+    if (quantity <= 0) {
+      toastr.error("Vui lòng chọn số lượng hợp lệ.");
       return;
     }
 
     try {
-      // Lấy tên sản phẩm từ product.productName
-      const productName = productDetail?.product?.productName;
+      // Lấy thông tin tồn kho từ biến thể được chọn
+      const selectedStock = currentDetail?.quantity; // Lấy quantity từ currentDetail thay vì stockAvailable
+      console.log("selectedStock:", selectedStock);
 
-      await CartService.addToCart(
-        productDetailId,
-        quantity,
-        localStorage.getItem("userId"),
-        token,
-        productName, // Truyền tên sản phẩm đúng
-        stockAvailable
+      // Kiểm tra xem stockAvailable có tồn tại không
+      if (selectedStock === undefined) {
+        toastr.error("Thông tin tồn kho không hợp lệ.");
+        return;
+      }
+
+      console.log("Stock available in handleAddToCart:", selectedStock); // Log giá trị tồn kho
+
+      // Gọi hàm addToCart với các tham số chi tiết hơn
+      const cartDetail = await CartService.addToCart(
+          currentDetail.productDetailId,         // productDetailId
+          quantity,                              // Số lượng cần thêm
+          localStorage.getItem("userId"),        // ID người dùng
+          token,                                  // Token xác thực
+          currentDetail.product.productName,     // Tên sản phẩm
+          selectedStock,                          // Số lượng tồn kho
+          selectedColor,                          // Màu sắc được chọn
+          selectedSize,                           // Kích thước được chọn
+          selectedWeight                          // Trọng lượng được chọn
       );
+
+      // Nếu thành công, thông báo và cập nhật giỏ hàng
+      // if (cartDetail) {
+      //   toastr.success("Sản phẩm đã được thêm vào giỏ hàng!");
+      // }
     } catch (error) {
-      console.error(error);
+      console.error("Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
+      toastr.error("Không thể thêm sản phẩm vào giỏ hàng.");
     }
   };
 
-  const handleCheckout = () => {
-    // Tạo đối tượng sản phẩm từ thông tin chi tiết hiện tại
-    const productToCheckout = {
-        productDetailId: productDetail.productDetailId, // Đảm bảo key là đúng
-        productName: product?.productName, // Tên sản phẩm
-        price: price, // Giá sản phẩm
-        quantity: quantity, // Số lượng sản phẩm
-        image: product?.imageUrl, // Thêm ảnh nếu có
-    };
-
-    // Log thông tin sản phẩm
-    console.log("Thông tin sản phẩm đang được thêm vào giỏ hàng:", productToCheckout);
-
-    // Chuyển hướng sang trang checkout cùng với dữ liệu sản phẩm
-    navigate("/checkout", {
-        state: {
-            products: [productToCheckout], // Danh sách sản phẩm (dù chỉ có 1 sản phẩm)
-            total: price * quantity, // Tổng tiền (giá * số lượng)
-            address: "", // Địa chỉ giao hàng sẽ được cung cấp ở trang checkout
-            userId: 0, // User ID sẽ được cập nhật sau khi người dùng đăng nhập
-            paymentMethod: "COD", // Phương thức thanh toán, có thể thay đổi sau
-        },
-    });
-};
 
 
 
-  
-  
-  if (loading) {
-    return <div className="text-center py-10 text-lg">Đang tải...</div>;
-  }
 
-  if (error) {
-    return (
-      <div className="text-center py-10 text-lg text-red-600">{error}</div>
-    );
-  }
 
-  if (!productDetail) {
-    return (
-      <div className="text-center py-10 text-lg text-red-600">
-        Không tìm thấy sản phẩm.
-      </div>
-    );
-  }
 
-  const { product, price } = productDetail;
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
-    <>
-      <Header />
-      <div className="container mx-32 w-auto my-10 p-8 bg-white shadow-lg rounded-lg">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Image Section */}
-          <div className="flex justify-center items-center">
-            <img
-              src={product?.imageUrl || "default_image_url.jpg"}
-              alt={product?.productName || "Sản phẩm"}
-              className="rounded-lg w-full lg:w-2/3 h-auto object-cover shadow-lg transition-transform duration-500 ease-in-out transform hover:scale-110"
-            />
-          </div>
-          {/* Product Details Section */}
-          <div className="lg:pl-8">
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-              {product?.productName || "Tên sản phẩm"}
-            </h1>
-            <p className="text-3xl text-red-600 mt-4 font-semibold">
-              {price || "Giá sản phẩm"}₫
-            </p>
-
-            <p className="text-lg text-gray-700 mt-4">
-              <strong>Tồn kho:</strong> {stockAvailable || 0} sản phẩm
-            </p>
-
-            {/* Show out-of-stock message if product is unavailable */}
-            {stockAvailable === 0 && (
-              <p className="text-lg text-red-600 mt-2">
-                Sản phẩm này hiện đã hết hàng.
-              </p>
-            )}
-
-            <div className="mt-6">
-              <label
-                htmlFor="quantity"
-                className="block text-lg font-medium text-gray-700"
-              >
-                Số lượng:
-              </label>
-              <input
-                id="quantity"
-                type="number"
-                value={quantity}
-                onChange={handleQuantityChange}
-                className="mt-2 block w-24 border border-gray-300 rounded-md p-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="0"
-                max={stockAvailable}
-                disabled={stockAvailable === 0}
+      <>
+        <Header />
+        <div className="product-detail-container">
+          <div className="product-card">
+            {/* Image Section */}
+            <div className="product-image-section">
+              <img
+                  src={currentDetail?.product?.imageUrl || "default_image.jpg"}
+                  alt={currentDetail?.product?.productName || "Product"}
+                  className="product-image"
               />
+              <div className="image-thumbnails">
+                <img src={currentDetail?.product?.imageUrl} alt="Thumbnail" />
+              </div>
             </div>
 
-            <p className="mt-8 text-lg text-gray-700 font-semibold">
-              Mô tả sản phẩm:
-            </p>
-            <p className="text-gray-600 mt-2 leading-relaxed">
-              {product?.description || "Không có mô tả"}
-            </p>
+            {/* Info Section */}
+            <div className="product-info-section">
+              <h1 className="product-title">{currentDetail?.product?.productName || "Product Name"}</h1>
+              <p className="product-price">{currentDetail?.price ? `${currentDetail.price} ₫` : "Liên hệ"}</p>
 
-            <div className="mt-10 flex space-x-4">
-              <button
-                onClick={() => handleAddToCart(productDetail.productDetailId)}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-transform duration-300 ease-in-out transform hover:scale-105"
-                disabled={quantity > stockAvailable || stockAvailable === 0}
-              >
-                Thêm vào giỏ
-              </button>
-
-              <button
-                onClick={handleCheckout}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-transform duration-300 ease-in-out transform hover:scale-105"
-              >
-                Thanh toán
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Related Products Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Sản phẩm liên quan
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-6">
-            {allProducts.slice(0, 4).map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-transform duration-300 ease-in-out transform hover:scale-105"
-              >
-                <img
-                  src={product.imageUrl || "default_image_url.jpg"}
-                  alt={product.productName}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                />
-                <div className="p-4">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {product.productName}
-                  </h3>
-                  <p className="text-lg text-red-600 mt-2">{product.price}₫</p>
+              {/* Color Options */}
+              <div className="product-options mb-3">
+                <h3>Màu sắc:</h3>
+                <div className="option-buttons">
+                  {colors.map((color) => (
+                      <button
+                          key={color.id}
+                          onClick={() => handleSelection("color", color.color)}
+                          disabled={!validColors.includes(color.color)}
+                          className={`option-button ${
+                              selectedColor === color.color ? "active" : ""
+                          } ${!validColors.includes(color.color) ? "disabled" : ""}`}
+                      >
+                        {color.color}
+                      </button>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              {/* Size Options */}
+              <div className="product-options mb-3">
+                <h3>Kích thước:</h3>
+                <div className="option-buttons">
+                  {sizes.map((size) => (
+                      <button
+                          key={size.id}
+                          onClick={() => handleSelection("size", size.productSize)}
+                          disabled={!validSizes.includes(size.productSize)}
+                          className={`option-button ${
+                              selectedSize === size.productSize ? "active" : ""
+                          } ${!validSizes.includes(size.productSize) ? "disabled" : ""}`}
+                      >
+                        {size.productSize}
+                      </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Weight Options */}
+              <div className="product-options">
+                <h3>Trọng lượng:</h3>
+                <div className="option-buttons">
+                  {weights.map((weight) => (
+                      <button
+                          key={weight.id}
+                          onClick={() => handleSelection("weight", weight.weightValue)}
+                          disabled={!validWeights.includes(weight.weightValue)}
+                          className={`option-button ${
+                              selectedWeight === weight.weightValue ? "active" : ""
+                          } ${!validWeights.includes(weight.weightValue) ? "disabled" : ""}`}
+                      >
+                        {weight.weightValue}
+                      </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity Selector */}
+              <div className="quantity-selector">
+                <h3 className="mb-4">Số lượng:</h3>
+                <div className="quantity-buttons">
+                  <button onClick={() => updateQuantity("decrement")}>-</button>
+                  <input type="text" value={quantity} readOnly />
+                  <button onClick={() => updateQuantity("increment")}>+</button>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="action-buttons">
+                <button className="buy-now-button">Mua ngay</button>
+                <button className="add-to-cart-button" onClick={handleAddToCart}>
+                  Thêm vào giỏ
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <Footer />
-    </>
+        <Footer />
+      </>
   );
 };
 
 export default ProductDetail;
+
