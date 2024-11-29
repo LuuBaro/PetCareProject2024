@@ -14,7 +14,7 @@ export default function Footer() {
             <form className="ml-5">
               <label
                 htmlFor="input-group-1"
-                className="block mb-1 mt-3 text-sm font-medium text-gray-900 dark:text-white">
+                className="block mb-1 mt-3 text-sm font-medium text-gray-900 text-black">
                 Nhận thông tin khuyến mãi
               </label>
               <div className="relative mb-3">

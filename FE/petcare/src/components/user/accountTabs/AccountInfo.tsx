@@ -17,13 +17,15 @@ function AccountInfo({
         if (!file) return;
 
         try {
-            const uploadedUrl = await onAvatarUpload(file); // Call parent-provided upload function
-            localStorage.setItem("avatarUrl", uploadedUrl); // Optionally persist avatar in localStorage
+            const avatarUrl = await onAvatarUpload(file); // Call parent-provided upload function
+            localStorage.setItem("avatarUrl", avatarUrl); // Optionally persist avatar in localStorage
+            console.log(avatarUrl)
+
         } catch (error) {
             console.error("Error in handleAvatarChange:", error);
         }
-    };
 
+    };
     return (
         <><h2 className="text-4xl font-extrabold mb-6 text-gray-700 mt-2">Thông tin cá nhân</h2><p
             className="text-sm text-gray-600 mb-6 font-bold italic">
@@ -33,11 +35,12 @@ function AccountInfo({
                 <div className="flex flex-col items-center mr-12">
                     <div
                         className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
-                        {avatarUrl ? (
-                            <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover"/>
-                        ) : (
-                            <span className="text-5xl text-blue-400">👤</span>
-                        )}
+                        <img
+                            src={localStorage.getItem("avatarUrl") || "default-avatar-url.jpg"}
+                            alt="Avatar"
+                            className="w-full h-full rounded-full object-cover"
+                        />
+
                         <button className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full shadow-md">
                             <label className="cursor-pointer text-white">
                                 <i className="fas fa-pencil-alt"></i>

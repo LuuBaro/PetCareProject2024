@@ -46,6 +46,7 @@ export default function Header() {
     localStorage.removeItem("fullName");
     localStorage.removeItem("phone");
     localStorage.removeItem("email");
+    localStorage.removeItem("avatarUrl");
     setIsAuthenticated(false);
     navigate("/"); // Chuyển về trang chủ
   };
