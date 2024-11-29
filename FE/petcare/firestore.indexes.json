@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "collectionId": "collection_name",
+      "fields": [
+        { "fieldPath": "field1", "order": "ASCENDING" },
+        { "fieldPath": "field2", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "another_collection_name",
+      "fields": [
+        { "fieldPath": "field3", "order": "ASCENDING" },
+        { "fieldPath": "field4", "order": "ASCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    }
+  ],
+  "fieldOverrides": []
+}
