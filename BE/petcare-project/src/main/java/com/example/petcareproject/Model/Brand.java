@@ -2,6 +2,8 @@ package com.example.petcareproject.Model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.context.annotation.Bean;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @Entity

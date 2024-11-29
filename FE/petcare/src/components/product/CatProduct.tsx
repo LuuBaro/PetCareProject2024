@@ -5,6 +5,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import ProductService from "../../service/ProductService";
 import FavouriteService from "../../service/FavouriteService";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 export default function CatProduct() {
     const [products, setProducts] = useState([]);
@@ -29,15 +30,55 @@ export default function CatProduct() {
         const fetchProducts = async () => {
             try {
                 const response = await ProductService.getAllProducts();
-                const formattedProducts = response.data.map((product) => ({
-                    id: product.productId,
-                    name: product.productName,
-                    quantity: product.productQuantity,
-                    image: product.imageUrl || "default_image_url.jpg",
-                    rating: product.rating || 0,
-                    price: getRandomPrice(), // Gán giá ngẫu nhiên
+                console.log('Product response:', response.data);  // Log dữ liệu sản phẩm
+
+                const response2 = await axios.get('http://localhost:8080/api/product-details');
+                console.log('Product details response:', response2.data);  // Log dữ liệu chi tiết sản phẩm
+
+                if (!Array.isArray(response.data) || response.data.length === 0) {
+                    console.error("No products found");
+                    return;
+                }
+
+                if (!Array.isArray(response2.data) || response2.data.length === 0) {
+                    console.error("No product details found");
+                    return;
+                }
+
+                const productDetails = response2.data.map((productDetail) => ({
+                    productDetailId: productDetail.productDetailId,
+                    productId: productDetail.product.productId,  // Đảm bảo lấy đúng productId
+                    price: productDetail.price,
+                    color: productDetail.productColor?.color || 'Không có màu',
+                    weight: productDetail.productWeight?.weightValue || 'Không có trọng lượng',
+                    size: productDetail.productSize?.productSize || 'Không có kích cỡ',
                 }));
-                setProducts(formattedProducts);
+
+                console.log('Mapped product details:', productDetails);  // Log chi tiết sau khi ánh xạ
+
+                // Kết hợp sản phẩm và chi tiết sản phẩm
+                const formattedProducts = response.data.map((product) => {
+                    const detail = productDetails.find(detail => detail.productId === product.productId);
+
+                    if (!detail) {
+                        console.error(`No details found for product ID: ${product.productId}`);
+                    }
+
+                    return {
+                        id: product.productId,
+                        name: product.productName,
+                        quantity: product.productQuantity,
+                        image: product.imageUrl || 'default_image_url.jpg',
+                        rating: product.rating || 0,
+                        price: detail ? detail.price : 0,
+                        brand: product.brand?.brandName || "Khác",
+                        category: product.category?.categogyName || "Khác",
+                    };
+                });
+
+                console.log('Formatted products:', formattedProducts);  // Log các sản phẩm đã định dạng
+
+                setProducts(formattedProducts.reverse());
             } catch (error) {
                 console.error("Error fetching products:", error);
             }

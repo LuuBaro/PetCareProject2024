@@ -375,7 +375,7 @@ export function Login() {
           <Button
             color="gray"
             size="lg"
-            className="mt-6 p-3"
+            className="mt-6 p-3 bg-black"
             fullWidth
             type="submit"
           >

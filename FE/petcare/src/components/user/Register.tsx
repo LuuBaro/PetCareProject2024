@@ -204,7 +204,7 @@ export function Register() {
             color="gray"
             size="lg"
             typeof="submit"
-            className="mt-6 p-3"
+            className="mt-6 p-3 bg-black"
             fullWidth>
             Đăng ký
           </Button>

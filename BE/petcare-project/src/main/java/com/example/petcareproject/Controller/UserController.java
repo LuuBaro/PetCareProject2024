@@ -10,10 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -86,15 +85,11 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
-
     @PutMapping("/update/{id}")
     public ResponseEntity<User> updateUser(
             @PathVariable Long id,
             @RequestBody UserUpdateDTO updateUserRequest) {
-
-        // Update the user with the new data
         User updatedUser = userService.updateUser(id, updateUserRequest);
-
         return ResponseEntity.ok(updatedUser);
     }
 

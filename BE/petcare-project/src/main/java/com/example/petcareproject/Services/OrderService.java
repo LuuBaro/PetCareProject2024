@@ -252,6 +252,11 @@ public class OrderService {
                 orderDetailDTO.setProductName(orderDetail.getProductDetail().getProduct().getProductName());
                 orderDetailDTO.setProductPrice(orderDetail.getProductDetail().getPrice());
                 orderDetailDTO.setQuantity(orderDetail.getQuantity());
+                orderDetailDTO.setProductColor(orderDetail.getProductDetail().getProductColor().getColor());
+                orderDetailDTO.setProductSize(orderDetail.getProductDetail().getProductSize().getProductSize());
+                orderDetailDTO.setProductWeightvalue(orderDetail.getProductDetail().getProductWeight().getWeightValue());
+                orderDetailDTO.setProductBrand(orderDetail.getProductDetail().getProduct().getBrand().getBrandName());
+                orderDetailDTO.setProductCategory(orderDetail.getProductDetail().getProduct().getCategory().getCategogyName());
                 orderDetailDTO.setPrice(orderDetail.getPrice());
                 orderDetailDTO.setProductImage(orderDetail.getProductDetail().getProduct().getImageUrl());
 
