@@ -4,8 +4,11 @@ import Footer from '../footer/Footer';
 import axios from 'axios';
 import Sidebar from "../user/Sidebar";
 import Swal from "sweetalert2";
+
 import {ref, uploadBytesResumable, getDownloadURL} from "firebase/storage";
 import {storage} from "../../config/firebaseConfig";
+
+
 import AccountInfo from "../user/accountTabs/AccountInfo";
 import ChangePassword from "../user/accountTabs/ChangePassword";
 import OrderHistory from "../user/accountTabs/Order";
@@ -112,10 +115,7 @@ export function Account() {
 
     const handleChange = (e) => {
         const {name, value} = e.target;
-        setUserInfo((prevState) => ({
-            ...prevState,
-            [name]: value,
-        }));
+        setUserInfo((prev) => ({...prev, [name]: value}));
     };
 
     const validateNewPassword = (password) => {
@@ -264,14 +264,17 @@ export function Account() {
             case "account":
                 return (
                     <AccountInfo
+
                         avatarUrl={avatarUrl}
                         setAvatarUrl={setAvatarUrl}
+
                         userInfo={userInfo}
                         isEditing={isEditing}
                         onChange={handleChange}
                         onEdit={handleEditClick}
                         onSave={handleSaveClick}
                         onCancel={handleCancelClick}
+
                         onAvatarUpload={handleAvatarUpload}
                     />
                 );
@@ -296,6 +299,12 @@ export function Account() {
                         onSave={handleSave}
                     />
                 );
+
+                    />
+                );
+            case "changePassword":
+                return <ChangePassword/>;
+
             case "orderHistory":
                 return <OrderHistory/>;
             case "favorites":
