@@ -6,22 +6,14 @@ import Header from "../header/Header";
 import ProductService from "../../service/ProductService";
 import { Link } from "react-router-dom";
 import FavouriteService from "../../service/FavouriteService";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import Footer from "../footer/Footer";
 import axios from 'axios';
-import productDetail from "../ProductDetail/productDetail";
-import ProductDetail from "../ProductDetail/productDetail";
-import ProductDetailService from "../../service/ProductDetailService";
-
 
 export default function Products() {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [favorites, setFavorites] = useState([]);
-    const [visibleProducts, setVisibleProducts] = useState(12);
     const [userId, setUserId] = useState(null);
-    // Filter states
     const [priceRange, setPriceRange] = useState([0, 1000000]);
     const [selectedCategory, setSelectedCategory] = useState("");
     const [selectedBrand, setSelectedBrand] = useState("");
@@ -29,6 +21,18 @@ export default function Products() {
     const [selectedPriceRange, setSelectedPriceRange] = useState('');
     const [categories, setCategories] = useState([]); // Danh sách danh mục
     const [selectedCategories, setSelectedCategories] = useState('Tất cả'); // Danh mục được chọn, mặc định là 'Tất cả'
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12; // Số sản phẩm mỗi trang
+
+    // Tính toán sản phẩm hiển thị
+    const indexOfLastProduct = currentPage * itemsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
+    const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
     // Fetch user ID and products
     useEffect(() => {
         const storedUserId = localStorage.getItem("userId");
@@ -127,7 +131,8 @@ export default function Products() {
     useEffect(() => {
         applyFilters();
     }, [priceRange, selectedBrand, selectedCategory]);
-// Apply price filter
+
+    // Apply price filter
     useEffect(() => {
         const filtered = products.filter((product) =>
             product.price >= priceRange[0] && product.price <= priceRange[1]
@@ -208,29 +213,6 @@ export default function Products() {
         }
     };
 
-    const handleLoadMore = () => {
-        setVisibleProducts((prev) => prev + 12);
-    };
-
-    const handleShowLess = () => {
-        setVisibleProducts((prev) => Math.max(prev - 12, 12));
-    };
-
-
-    // Sidebar states and handlers
-    const [showDogShop, setShowDogShop] = useState(false);
-    const [showCatShop, setShowCatShop] = useState(false);
-
-    const handleDogShopClick = () => {
-        setShowDogShop((prev) => !prev);
-        setSelectedCategory((prev) => (prev === "dog" ? null : "dog"));
-    };
-
-    const handleCatShopClick = () => {
-        setShowCatShop((prev) => !prev);
-        setSelectedCategory((prev) => (prev === "cat" ? null : "cat"));
-    };
-
     // Lấy dữ liệu các thương hiệu từ API
     useEffect(() => {
         const fetchBrands = async () => {
@@ -271,7 +253,7 @@ export default function Products() {
         fetchCategories(); // Gọi hàm lấy dữ liệu khi component mount
     }, []); // Chạy khi component được mount
 
-// Xử lý sự kiện chọn danh mục
+    // Xử lý sự kiện chọn danh mục
     const handleCategories = (event) => {
         const selected = event.target.value;
         // Nếu chọn "Tất cả", reset lại bộ lọc
@@ -282,9 +264,6 @@ export default function Products() {
         }
         console.log(selected);
     };
-
-
-
 
     return (
         <>
@@ -420,17 +399,17 @@ export default function Products() {
                 {/* Product List */}
                 <div className="w-full md:w-3/4 p-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
-                        {filteredProducts.slice(0, visibleProducts).map((product) => (
+                        {currentProducts.map((product) => (
                             <div key={product.id} className="relative">
                                 <Link to={`/ProductDetail/by-product/${product.id}`}>
                                     <ProductItem
                                         name={product.name}
-                                        price={`Giá: ${product.price.toLocaleString()} VND`}
+                                        price={`${product.price.toLocaleString()} VND`}
                                         image={product.image}
                                         rating={product.rating}
-                                        productId={product.id} // Truyền productId
-                                        toggleFavorite={toggleFavorite} // Truyền hàm toggleFavorite
-                                        isFavorite={favorites.includes(product.id)} // Truyền trạng thái yêu thích
+                                        productId={product.id}
+                                        toggleFavorite={toggleFavorite}
+                                        isFavorite={favorites.includes(product.id)}
                                     />
                                 </Link>
                             </div>
@@ -439,24 +418,46 @@ export default function Products() {
 
 
                     {/* Load More / Show Less */}
-                    <div className="flex justify-center mt-8 space-x-4">
-                        {visibleProducts < filteredProducts.length && (
-                            <button
-                                onClick={handleLoadMore}
-                                className="bg-[#00b7c0] text-white px-6 py-2 rounded-md"
-                            >
-                                Hiện thêm sản phẩm
-                            </button>
-                        )}
-                        {visibleProducts > 12 && (
-                            <button
-                                onClick={handleShowLess}
-                                className="bg-gray-400 text-white px-6 py-2 rounded-md"
-                            >
-                                Ẩn bớt sản phẩm
-                            </button>
+                    <div className="flex justify-end mt-8 space-x-2">
+                        {totalPages > 1 && (
+                            <>
+                                {/* Nút Trang Trước */}
+                                {currentPage > 1 && (
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        className="px-3 py-1 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
+                                    >
+                                        Trước
+                                    </button>
+                                )}
+
+                                {/* Số Trang */}
+                                {Array.from({length: totalPages}, (_, index) => index + 1).map((pageNumber) => (
+                                    <button
+                                        key={pageNumber}
+                                        onClick={() => handlePageChange(pageNumber)}
+                                        className={`px-3 py-1 rounded-md ${
+                                            currentPage === pageNumber ? "bg-[#00b7c0] text-white" : "bg-gray-300 text-black"
+                                        } hover:bg-[#008a8f]`}
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                ))}
+
+                                {/* Nút Trang Sau */}
+                                {currentPage < totalPages && (
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        className="px-3 py-1 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
+                                    >
+                                        Tiếp
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
+
+
                 </div>
             </div>
             <Footer></Footer>

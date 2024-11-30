@@ -137,7 +137,7 @@ export default function CatProduct() {
     };
 
     return (
-        <div className="mx-32">
+        <div className="mx-32 mb-5">
             <h2 className="text-3xl py-4 font-semibold">Gợi ý sản phẩm</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 {products.map((product) => (
@@ -145,29 +145,14 @@ export default function CatProduct() {
                         <Link to={`/ProductDetail/by-product/${product.id}`}>
                             <ProductItem
                                 name={product.name}
-                                quantity={`Số lượng: ${product.quantity}`}
+                                price={`${product.price.toLocaleString()} VND`}
                                 image={product.image}
                                 rating={product.rating}
-                                price={`Giá: ${product.price.toLocaleString()} VND`} // Hiển thị giá với định dạng tiền tệ
+                                productId={product.id} // Truyền productId
+                                toggleFavorite={toggleFavorite} // Truyền hàm toggleFavorite
+                                isFavorite={favorites.includes(product.id)} // Truyền trạng thái yêu thích
                             />
                         </Link>
-                        <a
-                            onClick={() => toggleFavorite(product.id)}
-                            className={`absolute top-2 right-2 ${
-                                favorites.includes(product.id) ? "cursor-not-allowed" : ""
-                            }`}
-                            title={
-                                favorites.includes(product.id)
-                                    ? "Sản phẩm này đã có trong danh sách yêu thích của bạn"
-                                    : "Thêm vào danh sách yêu thích"
-                            }
-                        >
-                            {favorites.includes(product.id) ? (
-                                <FavoriteIcon className="text-red-500" />
-                            ) : (
-                                <FavoriteBorderOutlinedIcon className="text-red-500" />
-                            )}
-                        </a>
                     </div>
                 ))}
             </div>

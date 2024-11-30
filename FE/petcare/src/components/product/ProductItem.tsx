@@ -51,10 +51,10 @@ export default function ProductItem({
                         >
                             {isFavorite ? (
                                 <FavoriteIcon
-                                    className="text-red-500 hover:text-[#00b7c0] transition-transform duration-500"/>
+                                    className="text-red-500 hover:text-red transition-transform duration-500"/>
                             ) : (
                                 <FavoriteBorderOutlinedIcon
-                                    className="hover:text-[#00b7c0] transition-transform duration-500"/>
+                                    className="hover:text-red transition-transform duration-500"/>
                             )}
                         </button>
 
