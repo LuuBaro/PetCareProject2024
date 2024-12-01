@@ -41,7 +41,6 @@ const ProductDetail = () => {
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);

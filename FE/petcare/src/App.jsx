@@ -20,6 +20,8 @@ import PayOrder from "./components/user/PayOrder";
 import OrderPage from "./components/Manage/OrderPage";
 import { Account } from "./components/user/Account";
 import ForgotPassword from "./components/user/ForgotPassword";
+import VerifyOtp from "./components/user/VerifyOtp.tsx";
+
 function App() {
   const userRole = localStorage.getItem("userRole");
   const currentPath = window.location.pathname;
@@ -47,6 +49,7 @@ function App() {
         <Route path="/user" element={<User />} />
         <Route path="/payorder" element={<PayOrder />} />
         <Route path="/orderpage" element={<OrderPage />} />
+        <Route path="/otp-verification" element={<VerifyOtp />} />
         <Route path="/account" element={<Account />} />
         <Route path="/reset-password" element={<ForgotPassword />} />
 

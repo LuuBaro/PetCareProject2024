@@ -162,11 +162,11 @@ export default function Header() {
 
                       {userRole === "Admin" && (
                           <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                            <Link to="/admin">
+                            <a href="/admin">
                               <button className="px-4 py-2 flex items-center justify-center gap-2">
                                 <ManageAccountsOutlinedIcon/> Admin
                               </button>
-                            </Link>
+                            </a>
                           </li>
                       )}
                       <hr className="mx-3 border-gray-500"/>

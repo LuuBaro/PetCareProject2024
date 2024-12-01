@@ -220,21 +220,13 @@ const SidebarMenu = () => {
 
             {/* Footer */}
             <div className="p-4 bg-gray-800">
-                {isLoggedIn ? (
-                    <button
-                        onClick={handleLogout}
-                        className="block w-full text-center text-gray-400 hover:underline"
-                    >
-                        Đăng xuất
-                    </button>
-                ) : (
-                    <Link
-                        to="/login"
+
+                    <a
+                        href="/"
                         className="block text-center text-gray-400 hover:underline"
                     >
-                        Đăng nhập
-                    </Link>
-                )}
+                        Trang chủ
+                    </a>
             </div>
         </div>
     );
