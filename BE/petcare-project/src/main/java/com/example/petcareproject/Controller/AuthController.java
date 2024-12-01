@@ -2,6 +2,7 @@ package com.example.petcareproject.Controller;
 
 import com.example.petcareproject.Model.User;
 import com.example.petcareproject.Services.EmailService;
+import com.example.petcareproject.Services.OtpService;
 import com.example.petcareproject.dto.*;
 import com.example.petcareproject.Services.JwtService;
 import com.example.petcareproject.Services.UserService;
@@ -45,6 +46,9 @@ public class AuthController {
     private JwtService jwtService;
 
     @Autowired
+    private OtpService otpService;
+
+    @Autowired
     private EmailService emailService;
 
     private static final JacksonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
@@ -54,15 +58,77 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequestDTO registerRequest) {
         try {
+            // Kiểm tra email đã tồn tại
+            if (userService.existsByEmail(registerRequest.getEmail())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Error: Email đã được sử dụng.");
+            }
+
+            // Lưu thông tin đăng ký tạm thời
+            otpService.saveRegistrationRequest(registerRequest);
+
+            // Tạo và gửi OTP
+            otpService.generateOtp(registerRequest.getEmail());
+
+            return ResponseEntity.ok("OTP has been sent to " + registerRequest.getEmail());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<String> verifyOtp(@RequestBody OtpRequest otpRequest) {
+        String email = otpRequest.getEmail();
+        String otp = otpRequest.getOtp();
+
+        if (otpService.validateOtp(email, otp)) {
+            // Xác thực OTP thành công, kiểm tra đăng ký tạm thời
+            RegisterRequestDTO registrationRequest = otpService.getRegistrationRequest(email);
+            if (registrationRequest == null) {
+                return ResponseEntity.badRequest().body("No registration request found.");
+            }
+
+            // Tạo tài khoản người dùng
             User newUser = new User();
-            newUser.setEmail(registerRequest.getEmail());
-            newUser.setPassword(registerRequest.getPassword()); // Ensure to hash the password
-            newUser.setFullName(registerRequest.getFullName());
+            newUser.setEmail(registrationRequest.getEmail());
+            newUser.setPassword(registrationRequest.getPassword()); // Hash password trước khi lưu
+            newUser.setFullName(registrationRequest.getFullName());
 
             userService.saveUser(newUser);
-            return ResponseEntity.ok("User registered successfully");
+
+            // Xóa OTP và thông tin đăng ký tạm thời
+            otpService.clearOtp(email);
+            otpService.removeRegistrationRequest(email);
+
+            return ResponseEntity.ok("Account created successfully!");
+        } else {
+            return ResponseEntity.badRequest().body("Invalid OTP");
+        }
+    }
+
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().body("Email không được để trống.");
+        }
+
+        // Kiểm tra xem email có trong danh sách yêu cầu đăng ký hay không
+        RegisterRequestDTO registrationRequest = otpService.getRegistrationRequest(email);
+        if (registrationRequest == null) {
+            return ResponseEntity.badRequest().body("Không tìm thấy yêu cầu đăng ký cho email này.");
+        }
+
+        try {
+            // Tạo OTP mới
+            otpService.generateOtp(email);
+
+            return ResponseEntity.ok("Mã OTP đã được gửi lại thành công.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Không thể gửi lại mã OTP. Vui lòng thử lại sau.");
         }
     }
 

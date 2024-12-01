@@ -52,7 +52,6 @@ const Cart: React.FC = () => {
         weight: item.productDetail.productWeight?.weightValue || 'Cân nặng không xác định', // Cũng cần kiểm tra đúng tên cho cân nặng
         size: item.productDetail.productSize?.productSize || 'Kích thước không xác định', // Lấy size sản phẩm
       }));
-      console.log("Products Data:", productsData); // Log ra danh sách productsData đã được tạo
       setProducts(productsData);
     } catch (error) {
       setError("Đã xảy ra lỗi khi tải giỏ hàng.");
@@ -89,9 +88,7 @@ const Cart: React.FC = () => {
       return;
     }
 
-    console.log("cartDetailId:", cartDetailId);
-    console.log("quantityItem:", quantityItem);
-    console.log("userId:", userId);
+
 
     // Tìm sản phẩm tương ứng trong giỏ hàng
     const cartProduct = products.find(product => product.cartDetailId === cartDetailId);
@@ -126,7 +123,6 @@ const Cart: React.FC = () => {
       );
 
       if (response.status === 200) {
-        console.log("Quantity updated successfully!");
 
         // Cập nhật trạng thái sản phẩm với số lượng mới
         setProducts(prevProducts =>

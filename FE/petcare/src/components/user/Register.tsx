@@ -41,21 +41,24 @@ export function Register() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/auth/register",
-        {
-          email: formData.email,
-          password: formData.password,
-          fullName: formData.fullName,
-          roleName: formData.roleName,
-        }
+          "http://localhost:8080/api/auth/register",
+          {
+            email: formData.email,
+            password: formData.password,
+            fullName: formData.fullName,
+            roleName: formData.roleName,
+          }
       );
 
       // Check API response
       if (response.data === "Email đã được sử dụng!") {
         swal.fire("Lỗi", "Email đã được sử dụng. Vui lòng chọn email khác.", "error");
       } else if (response.status === 200) {
-        swal.fire("Thành công!", "Bạn đã đăng ký thành công!", "success");
-        navigate("/login");
+        // Đã gửi OTP thành công, chuyển hướng tới trang OTP
+        swal.fire("Thành công!", "Bạn đã đăng ký thành công. Vui lòng kiểm tra email của bạn để nhập mã OTP.", "success");
+
+        // Chuyển hướng đến trang OTP và truyền email
+        navigate("/otp-verification", { state: { email: formData.email } });
       } else {
         swal.fire("Lỗi", "Đăng ký thất bại. Vui lòng thử lại.", "error");
       }
@@ -64,6 +67,8 @@ export function Register() {
       swal.fire("Lỗi", errorMsg, "error");
     }
   };
+
+
 
   return (
     <section className="grid text-center h-screen items-center p-8">

@@ -206,4 +206,9 @@ public class UserService implements UserDetailsService {
                 .append("</div>")
                 .toString();
     }
+
+    // Trong UserService
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
 }
