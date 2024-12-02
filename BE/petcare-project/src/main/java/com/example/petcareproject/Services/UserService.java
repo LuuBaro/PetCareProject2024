@@ -82,7 +82,6 @@ public class UserService implements UserDetailsService {
             // Update user data
             user.setFullName(updateUserRequest.getFullName());
             user.setPhone(updateUserRequest.getPhone());
-            user.setEmail(updateUserRequest.getEmail());
 
             // Save the updated user to the database
             return userRepository.save(user);
@@ -205,5 +204,10 @@ public class UserService implements UserDetailsService {
                 .append("</div>")
                 .append("</div>")
                 .toString();
+    }
+
+    // Trong UserService
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 }

@@ -136,9 +136,9 @@ export default function Header() {
                   className="flex items-center hover:text-white transition ease-out duration-200"
                 >
                   <img
-                    src="https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"
+                    src={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"}
                     alt="User Avatar"
-                    className="h-9 w-9 rounded-full"
+                    className="h-9 w-9 rounded-full object-cover" 
                   />
                   <span className="ml-2">Xin chào, {localStorage.getItem('fullName')}!</span> {/* Sử dụng fullName */}
                 </button>
@@ -162,11 +162,11 @@ export default function Header() {
 
                       {userRole === "Admin" && (
                           <li className="hover:text-[#00B7C0] transition ease-out duration-200 p-1">
-                            <Link to="/admin">
+                            <a href="/admin">
                               <button className="px-4 py-2 flex items-center justify-center gap-2">
                                 <ManageAccountsOutlinedIcon/> Admin
                               </button>
-                            </Link>
+                            </a>
                           </li>
                       )}
                       <hr className="mx-3 border-gray-500"/>

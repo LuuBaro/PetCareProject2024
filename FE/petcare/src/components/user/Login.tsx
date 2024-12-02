@@ -34,7 +34,6 @@ export function Login() {
         localStorage.setItem("fullName", data.fullName); // Lưu fullName vào localStorage
         localStorage.setItem("phone", data.phone);
         localStorage.setItem("email", data.email);
-        console.log(data);
 
         Swal.fire({
           title: "Đăng nhập thành công!",
@@ -44,7 +43,6 @@ export function Login() {
         });
 
         const userRole = localStorage.getItem("userRole");
-        console.log("User Role:", userRole); // Kiểm tra giá trị
         if (userRole === "Admin") {
           navigate("/admin"); // Chuyển hướng ngay lập tức tới trang admin
         } else {
@@ -131,7 +129,6 @@ export function Login() {
   const handleGoogleLogin = async (response) => {
     if (response && response.credential) {
       const token = response.credential;
-      console.log("Google Token:", token);
 
       try {
         const res = await fetch("http://localhost:8080/api/auth/google-login", {
@@ -186,16 +183,9 @@ export function Login() {
 
   const handleFacebookLogin = (response) => {
     if (response.authResponse) {
-      console.log("Welcome! Fetching your information....");
 
       // Gọi Facebook API để lấy thông tin người dùng
       window.FB.api("/me", { fields: "id,name,email" }, async function (user) {
-        console.log(user);
-        console.log("Successful login for: " + user.name);
-        console.log("Email: " + user.email);
-        console.log("User ID: " + user.id);
-        // In ra accessToken để kiểm tra
-        console.log("Access Token:", response.authResponse.accessToken);
         try {
           const res = await fetch(
             "http://localhost:8080/api/auth/facebook-login",
@@ -221,8 +211,6 @@ export function Login() {
             localStorage.setItem("isAuthenticated", "true");
             localStorage.setItem("fullName", data.fullName);
             localStorage.setItem("email", data.email);
-            console.log(data.email);
-            console.log("User Role: " + data.roleName);
             Swal.fire({
               title: "Đăng nhập thành công!",
               text: `Xin chào ${data.fullName}`,
@@ -248,7 +236,6 @@ export function Login() {
         }
       });
     } else {
-      console.log("User cancelled login or did not fully authorize.");
       Swal.fire({
         icon: "warning",
         title: "Đã hủy đăng nhập!",
@@ -263,6 +250,7 @@ export function Login() {
       client_id:
         "854614351620-s8cmgi8ticqj4p2jlqedf4drbis3s7oj.apps.googleusercontent.com",
       callback: handleGoogleLogin,
+
     });
 
     window.google.accounts.id.renderButton(
@@ -305,126 +293,128 @@ export function Login() {
         </Typography>
         {errorMessage && <p className="text-red-500">{errorMessage}</p>}
         <form
-          onSubmit={handleSubmit}
-          className="mx-auto max-w-[24rem] text-left"
+            onSubmit={handleSubmit}
+            className="mx-auto max-w-[24rem] text-left"
         >
           <div className="mb-6">
             <label htmlFor="email">
               <Typography
-                variant="small"
-                className="mb-2 block font-medium text-gray-900"
+                  variant="small"
+                  className="mb-2 block font-medium text-gray-900"
               >
                 Email
               </Typography>
             </label>
             <Input
-              id="email"
-              color="gray"
-              size="lg"
-              type="email"
-              name="email"
-              placeholder="name@gmail.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setErrorMessage("");
-              }} // Clear error message
-              className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
-              labelProps={{ className: "hidden" }}
-              required
+                id="email"
+                color="gray"
+                size="lg"
+                type="email"
+                name="email"
+                placeholder="name@gmail.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setErrorMessage("");
+                }} // Clear error message
+                className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
+                labelProps={{className: "hidden"}}
+                required
             />
           </div>
           <div className="mb-6">
             <label htmlFor="password">
               <Typography
-                variant="small"
-                className="mb-2 block font-medium text-gray-900"
+                  variant="small"
+                  className="mb-2 block font-medium text-gray-900"
               >
                 Mật khẩu
               </Typography>
             </label>
             <Input
-              size="lg"
-              placeholder="********"
-              labelProps={{ className: "hidden" }}
-              className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
-              type={passwordShown ? "text" : "password"}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrorMessage("");
-              }} // Clear error message
-              icon={
-                <i onClick={togglePasswordVisiblity}>
-                  {passwordShown ? (
-                    <EyeIcon
-                      className="h-5 w-5 absolute"
-                      style={{ transform: "translate(1650%, 60%)" }}
-                    />
-                  ) : (
-                    <EyeSlashIcon
-                      className="h-5 w-5 absolute"
-                      style={{ transform: "translate(1650%, 60%)" }}
-                    />
-                  )}
-                </i>
-              }
-              required
+                size="lg"
+                placeholder="********"
+                labelProps={{className: "hidden"}}
+                className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
+                type={passwordShown ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrorMessage("");
+                }} // Clear error message
+                icon={
+                  <i onClick={togglePasswordVisiblity}>
+                    {passwordShown ? (
+                        <EyeIcon
+                            className="h-5 w-5 absolute"
+                            style={{transform: "translate(1650%, 60%)"}}
+                        />
+                    ) : (
+                        <EyeSlashIcon
+                            className="h-5 w-5 absolute"
+                            style={{transform: "translate(1650%, 60%)"}}
+                        />
+                    )}
+                  </i>
+                }
+                required
             />
           </div>
           <Button
-            color="gray"
-            size="lg"
-            className="mt-6 p-3 bg-black"
-            fullWidth
-            type="submit"
+              color="gray"
+              size="lg"
+              className="mt-6 p-3 bg-black"
+              fullWidth
+              type="submit"
           >
             Đăng nhập
           </Button>
           <div className="!mt-4 flex justify-end">
             <Typography
-              as="button"
-              color="blue-gray"
-              variant="small"
-              onClick={() => setForgotPasswordModalOpen(true)} // Open modal
+                as="button"
+                color="blue-gray"
+                variant="small"
+                onClick={() => setForgotPasswordModalOpen(true)} // Open modal
             >
               Quên mật khẩu?
             </Typography>
           </div>
-          {/* Nút đăng nhập với Google */}
-          <button
-            id="google-login-button"
-            className="border border-gray-300 w-full p-3 mt-6 rounded-md font-medium hover:bg-gray-100 flex items-center justify-center gap-3"
-            type="button"
-            style={{ border: "1px solid #eee" }}
-            onClick={() => window.google.accounts.id.prompt()} // Kích hoạt Google Sign-In
-          >
-            <img
-              src={`https://www.material-tailwind.com/logos/logo-google.png`}
-              alt="google"
-              className="h-6 w-6"
-            />
-            Đăng nhập với Google
-          </button>
-          <button
-            className="border border-gray-300 w-full p-3 mt-6 rounded-md font-medium hover:bg-gray-100 flex items-center justify-center gap-3"
-            type="button"
-            onClick={() =>
-              window.FB.login(handleFacebookLogin, { scope: "email" })
-            } // Kích hoạt Facebook Sign-In
-          >
-            <img
-              src={`https://www.material-tailwind.com/logos/logo-facebook.png`}
-              alt="facebook"
-              className="h-6 w-6"
-            />
-            Đăng nhập với Facebook
-          </button>
+          {/* Nút đăng nhập với Google và Facebook */}
+          <div className="flex gap-4 mt-6">
+            <button
+                id="google-login-button"
+                className="flex items-center justify-center gap-3 border border-gray-300 p-3 rounded-md font-medium hover:bg-gray-100 w-full max-w-xs"
+                type="button"
+                onClick={() => window.google.accounts.id.prompt()} // Kích hoạt Google Sign-In
+            >
+              <img
+                  src="https://www.material-tailwind.com/logos/logo-google.png"
+                  alt="google"
+                  className="h-6 w-6"
+              />
+             Google
+            </button>
+            <button
+                className="flex items-center justify-center gap-3 border border-gray-300 p-3 rounded-md font-medium hover:bg-gray-100 w-full max-w-xs"
+                type="button"
+                onClick={() =>
+                    window.FB.login(handleFacebookLogin, {scope: "email"})
+                } // Kích hoạt Facebook Sign-In
+            >
+              <img
+                  src="https://www.material-tailwind.com/logos/logo-facebook.png"
+                  alt="facebook"
+                  className="h-6 w-6"
+              />
+              Facebook
+            </button>
+          </div>
+
 
           <Typography
-            variant="small"
-            color="gray"
-            className="!mt-4 text-center font-normal"
+              variant="small"
+              color="gray"
+              className="!mt-4 text-center font-normal"
           >
             Chưa có tài khoản?{" "}
             <Link to="/register" className="font-medium text-gray-900">
@@ -438,25 +428,25 @@ export function Login() {
       {/* Modal Quên mật khẩu */}
 
       {isForgotPasswordModalOpen && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-md shadow-lg max-w-md w-full">
-            <Typography variant="h5" className="mb-4">
-              Quên mật khẩu
-            </Typography>
-            {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>} {/* Display error message */}
-            <Input
-              color="gray"
-              size="lg"
-              type="email"
-              placeholder="Nhập email của bạn"
-              value={forgotPasswordEmail}
-              onChange={(e) => setForgotPasswordEmail(e.target.value)}
-              required
-            />
-            <div className="flex justify-end gap-4 mt-6">
-              <Button
-                color="gray"
-                variant="text"
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-md shadow-lg max-w-md w-full">
+              <Typography variant="h5" className="mb-4">
+                Quên mật khẩu
+              </Typography>
+              {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>} {/* Display error message */}
+              <Input
+                  color="gray"
+                  size="lg"
+                  type="email"
+                  placeholder="Nhập email của bạn"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  required
+              />
+              <div className="flex justify-end gap-4 mt-6">
+                <Button
+                    color="gray"
+                    variant="text"
                 onClick={() => setForgotPasswordModalOpen(false)} // Close modal
               >
                 Hủy

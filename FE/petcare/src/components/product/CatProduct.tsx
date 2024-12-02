@@ -30,18 +30,14 @@ export default function CatProduct() {
         const fetchProducts = async () => {
             try {
                 const response = await ProductService.getAllProducts();
-                console.log('Product response:', response.data);  // Log dữ liệu sản phẩm
 
                 const response2 = await axios.get('http://localhost:8080/api/product-details');
-                console.log('Product details response:', response2.data);  // Log dữ liệu chi tiết sản phẩm
 
                 if (!Array.isArray(response.data) || response.data.length === 0) {
-                    console.error("No products found");
                     return;
                 }
 
                 if (!Array.isArray(response2.data) || response2.data.length === 0) {
-                    console.error("No product details found");
                     return;
                 }
 
@@ -54,14 +50,12 @@ export default function CatProduct() {
                     size: productDetail.productSize?.productSize || 'Không có kích cỡ',
                 }));
 
-                console.log('Mapped product details:', productDetails);  // Log chi tiết sau khi ánh xạ
 
                 // Kết hợp sản phẩm và chi tiết sản phẩm
                 const formattedProducts = response.data.map((product) => {
                     const detail = productDetails.find(detail => detail.productId === product.productId);
 
                     if (!detail) {
-                        console.error(`No details found for product ID: ${product.productId}`);
                     }
 
                     return {
@@ -76,7 +70,6 @@ export default function CatProduct() {
                     };
                 });
 
-                console.log('Formatted products:', formattedProducts);  // Log các sản phẩm đã định dạng
 
                 setProducts(formattedProducts.reverse());
             } catch (error) {
@@ -137,7 +130,7 @@ export default function CatProduct() {
     };
 
     return (
-        <div className="mx-32">
+        <div className="mx-32 mb-5">
             <h2 className="text-3xl py-4 font-semibold">Gợi ý sản phẩm</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 {products.map((product) => (
@@ -145,29 +138,14 @@ export default function CatProduct() {
                         <Link to={`/ProductDetail/by-product/${product.id}`}>
                             <ProductItem
                                 name={product.name}
-                                quantity={`Số lượng: ${product.quantity}`}
+                                price={`${product.price.toLocaleString()} VND`}
                                 image={product.image}
                                 rating={product.rating}
-                                price={`Giá: ${product.price.toLocaleString()} VND`} // Hiển thị giá với định dạng tiền tệ
+                                productId={product.id} // Truyền productId
+                                toggleFavorite={toggleFavorite} // Truyền hàm toggleFavorite
+                                isFavorite={favorites.includes(product.id)} // Truyền trạng thái yêu thích
                             />
                         </Link>
-                        <a
-                            onClick={() => toggleFavorite(product.id)}
-                            className={`absolute top-2 right-2 ${
-                                favorites.includes(product.id) ? "cursor-not-allowed" : ""
-                            }`}
-                            title={
-                                favorites.includes(product.id)
-                                    ? "Sản phẩm này đã có trong danh sách yêu thích của bạn"
-                                    : "Thêm vào danh sách yêu thích"
-                            }
-                        >
-                            {favorites.includes(product.id) ? (
-                                <FavoriteIcon className="text-red-500" />
-                            ) : (
-                                <FavoriteBorderOutlinedIcon className="text-red-500" />
-                            )}
-                        </a>
                     </div>
                 ))}
             </div>

@@ -28,11 +28,6 @@ export function Account() {
     });
 
 
-    
-
-    // const closeModal = () => setShowChangePassword(false);
-
-
     const handleEditClick = () => {
         setIsEditing(true); // Switch to edit mode
     };
@@ -81,7 +76,7 @@ export function Account() {
 
     const handleSaveClick = async () => {
         const userId = localStorage.getItem('userId'); // Lấy userId từ localStorage
-        const { email, ...updatedInfo } = userInfo; // Loại bỏ email nếu không cần gửi
+        const {...updatedInfo } = userInfo; // Loại bỏ email nếu không cần gửi
 
         try {
             // Gọi hàm updateUser để xử lý việc cập nhật user
@@ -310,7 +305,7 @@ export function Account() {
             <Header/>
 
             <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
-                <Sidebar setActiveTab={setActiveTab} avatarUrl={localStorage.getItem("avatarUrl")} />
+                <Sidebar setActiveTab={setActiveTab} avatarUrl={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "default-avatar-url.jpg"} />
                 <div
                     className="w-3/4 pl-10 bg-gray-100"
                     style={{minHeight: '70vh', display: 'flex', flexDirection: 'column'}}
