@@ -68,7 +68,6 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
     const [isLoadingWards, setIsLoadingWards] = useState<boolean>(false);
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -83,7 +82,6 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
             ward: selectedWardObj ? selectedWardObj.WardName : '',
             userId: { id: userId }
         };
-
 
         try {
             const result = await addAddress(addressData);
@@ -300,10 +298,12 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                 price: productDetail.price,
                 productName: productDetail.productName,
             })),
+            shippingCost: shippingFee,
             total: totalWithShipping,
             address: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
             userId: userId,
         };
+        console.log("Dữ liệu đơn hàng:", orderData);
 
         // Xử lý thanh toán COD
         if (selectedPaymentMethod === "cod") {

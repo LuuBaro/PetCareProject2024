@@ -29,7 +29,7 @@ public class OrderController {
         public List<OrderDetailDTO> products;
         public double total;
         public String address;
-        public int shippingCost;
+        public double shippingCost;
         public Long userId; // Thêm userId
         public String paymentMethod;
     }

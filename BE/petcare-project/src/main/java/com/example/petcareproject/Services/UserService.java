@@ -82,7 +82,6 @@ public class UserService implements UserDetailsService {
             // Update user data
             user.setFullName(updateUserRequest.getFullName());
             user.setPhone(updateUserRequest.getPhone());
-            user.setEmail(updateUserRequest.getEmail());
 
             // Save the updated user to the database
             return userRepository.save(user);
