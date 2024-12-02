@@ -20,14 +20,17 @@ function AccountInfo({
         if (!file) return;
 
         try {
-            const avatarUrl = await onAvatarUpload(file); // Call parent-provided upload function
-            localStorage.setItem("avatarUrl", avatarUrl); // Optionally persist avatar in localStorage
-            console.log(avatarUrl)
+            // Call parent-provided upload function
+            const avatarUrl = await onAvatarUpload(file);
+            const userId = localStorage.getItem("userId");
 
+            if (userId) {
+                localStorage.setItem(`avatarUrl_${userId}`, avatarUrl); // Lưu avatar theo userId
+                console.log("Avatar uploaded:", avatarUrl);
+            }
         } catch (error) {
             console.error("Error in handleAvatarChange:", error);
         }
-
 
     };
 
@@ -42,10 +45,11 @@ function AccountInfo({
                     <div
                         className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
                         <img
-                            src={localStorage.getItem("avatarUrl") || "default-avatar-url.jpg"}
+                            src={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "default-avatar-url.jpg"}
                             alt="Avatar"
                             className="w-full h-full rounded-full object-cover"
                         />
+
 
                         <button className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full shadow-md">
                             <label className="cursor-pointer text-white">
@@ -61,7 +65,7 @@ function AccountInfo({
                     </div>
                     <button onClick={() => document.getElementById("avatar-input").click()}
                             className="mt-4 text-sm text-blue-500 font-semibold">
-                        Thay đổi ảnh đại diện
+                    Thay đổi ảnh đại diện
                     </button>
                     <input
                         id="avatar-input"
