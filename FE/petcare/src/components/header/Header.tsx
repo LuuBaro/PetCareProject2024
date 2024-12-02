@@ -136,9 +136,9 @@ export default function Header() {
                   className="flex items-center hover:text-white transition ease-out duration-200"
                 >
                   <img
-                    src="https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"
+                    src={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"}
                     alt="User Avatar"
-                    className="h-9 w-9 rounded-full"
+                    className="h-9 w-9 rounded-full object-cover" 
                   />
                   <span className="ml-2">Xin chào, {localStorage.getItem('fullName')}!</span> {/* Sử dụng fullName */}
                 </button>
