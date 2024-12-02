@@ -93,7 +93,7 @@ const ManageBrand = () => {
                 </div>
             </div>
 
-            {error && <p className="text-red-500 mb-4">{error}</p>} // Hiển thị thông báo lỗi nếu có
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             {loading ? (
                 <p className="text-center">Đang tải danh sách thương hiệu...</p> // Hiển thị thông báo tải
             ) : (

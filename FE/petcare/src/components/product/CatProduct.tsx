@@ -30,18 +30,14 @@ export default function CatProduct() {
         const fetchProducts = async () => {
             try {
                 const response = await ProductService.getAllProducts();
-                console.log('Product response:', response.data);  // Log dữ liệu sản phẩm
 
                 const response2 = await axios.get('http://localhost:8080/api/product-details');
-                console.log('Product details response:', response2.data);  // Log dữ liệu chi tiết sản phẩm
 
                 if (!Array.isArray(response.data) || response.data.length === 0) {
-                    console.error("No products found");
                     return;
                 }
 
                 if (!Array.isArray(response2.data) || response2.data.length === 0) {
-                    console.error("No product details found");
                     return;
                 }
 
@@ -54,14 +50,12 @@ export default function CatProduct() {
                     size: productDetail.productSize?.productSize || 'Không có kích cỡ',
                 }));
 
-                console.log('Mapped product details:', productDetails);  // Log chi tiết sau khi ánh xạ
 
                 // Kết hợp sản phẩm và chi tiết sản phẩm
                 const formattedProducts = response.data.map((product) => {
                     const detail = productDetails.find(detail => detail.productId === product.productId);
 
                     if (!detail) {
-                        console.error(`No details found for product ID: ${product.productId}`);
                     }
 
                     return {
@@ -76,7 +70,6 @@ export default function CatProduct() {
                     };
                 });
 
-                console.log('Formatted products:', formattedProducts);  // Log các sản phẩm đã định dạng
 
                 setProducts(formattedProducts.reverse());
             } catch (error) {

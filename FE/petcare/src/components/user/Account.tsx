@@ -30,12 +30,6 @@ export function Account() {
         phone: localStorage.getItem('phone'),
     });
 
-
-    
-
-    const closeModal = () => setShowChangePassword(false);
-
-
     const handleEditClick = () => {
         setIsEditing(true); // Switch to edit mode
     };
@@ -84,7 +78,7 @@ export function Account() {
 
     const handleSaveClick = async () => {
         const userId = localStorage.getItem('userId'); // Lấy userId từ localStorage
-        const { email, ...updatedInfo } = userInfo; // Loại bỏ email nếu không cần gửi
+        const {...updatedInfo } = userInfo; // Loại bỏ email nếu không cần gửi
 
         try {
             // Gọi hàm updateUser để xử lý việc cập nhật user
