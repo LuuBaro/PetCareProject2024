@@ -15,7 +15,7 @@ import ProductSizeManager from "../components/Manage/ManageProductSizes";
 import ManageWeights from "../components/Manage/ManageWeights";
 import ManageInventory from "../components/Manage/ManageInventory";
 import ManageRole from "../components/Manage/ManageRole";
-
+import VoucherManagement from "../components/Manage/Voucher";
 
 
 function Admin() {
@@ -46,6 +46,7 @@ function Admin() {
 
               <Route path="/product-weights" element={<ManageWeights />} /> {/* Add this route */}
               <Route path="/product-inventory" element={<ManageInventory />} /> {/* Add this route */}
+              <Route path="/voucher-management" element={<VoucherManagement/>} />
             </Routes>
           </main>
         </div>
