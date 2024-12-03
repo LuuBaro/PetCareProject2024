@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import DataTable from "react-data-table-component";
+
 
 interface OrderDetail {
     productDetailId: number;
@@ -55,16 +57,36 @@ const OrderHistory: React.FC = () => {
         { id: "Trả hàng", label: "Trả hàng/Hoàn tiền" },
     ];
 
+    const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case "chờ xác nhận":
+                return "text-orange-400 font-bold"; // Màu xám đậm cho trạng thái chờ xác nhận
+            case "đang vận chuyển":
+                return "text-blue-500 font-bold"; // Màu xanh dương cho trạng thái đang vận chuyển
+            case "chờ giao hàng":
+                return "text-green-500 font-bold"; // Màu tím cho trạng thái chờ giao hàng
+            case "hoàn thành":
+                return "text-[#52b7c0] font-bold"; // Màu cyan cho trạng thái hoàn thành
+            case "đã hủy":
+                return "text-red-600 font-bold"; // Màu đỏ cho trạng thái đã hủy
+            case "trả hàng":
+                return "text-orange-500 font-bold"; // Màu cam cho trạng thái trả hàng
+            default:
+                return "text-gray-500 font-bold"; // Màu xám mặc định
+        }
+    };
+
     useEffect(() => {
         const fetchOrders = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`http://localhost:8080/api/all`);
+                const userId = localStorage.getItem("userId"); // Lấy userId từ localStorage hoặc context
+                const response = await axios.get(`http://localhost:8080/api/user/${userId}/orders`);
                 const sortedOrders = response.data.sort(
-                    (a: Order, b: Order) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+                    (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
                 );
                 setOrders(sortedOrders);
-                console.log(sortedOrders)
+                console.log(sortedOrders);
             } catch (error) {
                 console.error("Lỗi khi tìm nạp đơn đặt hàng", error);
             } finally {
@@ -73,6 +95,7 @@ const OrderHistory: React.FC = () => {
         };
         fetchOrders();
     }, []);
+
 
     const handleTabChange = (tabId: string) => {
         setActiveTab(tabId);
@@ -122,6 +145,98 @@ const OrderHistory: React.FC = () => {
         setIsModalOpen(true);  // Mở modal khi nhấp vào "Xem"
     };
 
+    const columns = [
+        {
+            name: "Mã đơn",
+            selector: (row) => row.orderId,
+            sortable: true,
+            center: true,
+            grow: 2,
+            wrap: true, // Bật tính năng hiển thị xuống dòng nếu cần
+        },
+        {
+            name: "Người nhận",
+            selector: (row) => {
+                const fullName = /Họ và tên:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin";
+                const phoneNumber = /Số điện thoại:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin";
+                return (
+                    <div>
+                        <div>{fullName}</div>
+                        <div>{phoneNumber}</div>
+                    </div>
+                );
+            },
+            sortable: false,
+            grow: 2,
+            wrap: true,
+        },
+        {
+            name: "Địa chỉ",
+            selector: (row) => /Địa chỉ:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin",
+            sortable: false,
+            grow: 2, // Tăng chiều rộng cột
+            wrap: true,
+        },
+        {
+            name: "Ngày đặt",
+            selector: (row) => new Date(row.orderDate).toLocaleDateString("vi-VN"),
+            sortable: true,
+            center: true,
+            grow: 2, // Tăng chiều rộng cột
+        },
+        {
+            name: "Tổng tiền",
+            selector: (row) => row.totalAmount.toLocaleString("vi-VN") + " VND",
+            sortable: true,
+            center: true,
+            grow: 2, // Tăng chiều rộng cột
+            wrap: true, // Bật tính năng hiển thị xuống dòng nếu cần
+        },
+        {
+            name: "Trạng thái",
+            selector: (row) => row.status,
+            sortable: true,
+            grow: 2, // Tăng chiều rộng cột
+            wrap: true,
+            cell: (row) => (
+                <span className={getStatusColor(row.status)}>{row.status}</span>
+            ),
+        },
+        {
+            name: "Chọn",
+            selector: (row) => (
+                <input
+                    type="checkbox"
+                    checked={selectedOrders.has(row.orderId)}
+                    onChange={() => handleCheckboxChange(row.orderId)}
+                />
+            ),
+            center: true,
+            grow: 0.5,
+        },
+        {
+            name: "Chi tiết",
+            selector: (row) => (
+                <button
+                    onClick={() => {
+                        setSelectedOrderDetails(row);
+                        setIsModalOpen(true);
+                    }}
+                    className="text-[#00b7c0] hover:text-blue-500"
+                >
+                    <i className="fas fa-eye"></i> Xem
+                </button>
+            ),
+            center: true,
+            grow: 0.5,
+        },
+    ];
+
+
+    const filteredData = filteredOrders.filter((order) =>
+        order.orderId?.toString().toLowerCase().includes(searchTerm?.toLowerCase() || "")
+    );
+
 
     if (loading) return <div>Loading...</div>;
 
@@ -129,7 +244,8 @@ const OrderHistory: React.FC = () => {
         <div className="container mx-auto mt-4 p-4 bg-white shadow-lg rounded-lg">
             {/* Search and Tabs */}
             <div className="border-b-2 pb-2 mb-4">
-                <div className="flex justify-between mb-4">
+                {/* Search Input */}
+                <div className="mb-4">
                     <input
                         type="text"
                         placeholder="Tìm kiếm đơn hàng..."
@@ -145,91 +261,58 @@ const OrderHistory: React.FC = () => {
                             className={`text-lg p-2 transition-all rounded-md relative ${activeTab === tab.id
                                 ? "text-[#00b7c0]"
                                 : "text-gray-500"
-                                }`}
+                            }`}
                             onClick={() => handleTabChange(tab.id)}
                         >
                             {tab.label}
                             {activeTab === tab.id && (
-                                <span className="absolute left-0 right-0 bottom-0 h-[2px] bg-[#00b7c0]" />
+                                <span className="absolute left-0 right-0 bottom-0 h-[2px] bg-[#00b7c0]"/>
                             )}
                         </button>
                     ))}
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-                {filteredOrders.length === 0 ? (
-                    <div className="text-center text-gray-600  py-4">
-                        Không tìm thấy đơn hàng nào.
-                    </div>
-                ) : (
-                    <table className="min-w-full border-collapse bg-white shadow-md rounded-lg">
-                        <thead className="bg-gray-100 text-gray-600 text-sm">
-                            <tr>
-                                <th className="border p-3 text-center">Mã đơn hàng</th>
-                                <th className="border p-3 text-center">Họ tên - Số điện thoại</th>
-                                <th className="border p-3 text-center">Địa chỉ</th>
-                                <th className="border p-3 text-center">Ngày đặt</th>
-                                <th className="border p-3 text-center">Tổng tiền</th>
-                                <th className="border p-3 text-center">Trạng thái</th>
-                                <th className="border p-3 text-center">Chọn</th>
-                                <th className="border p-3 text-center">Chi tiết</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredOrders.map((order) => {
-                                // Tách thông tin họ tên, số điện thoại và địa chỉ từ shippingAddress
-                                const namePattern = /Họ và tên:\s*([^\n]*)/;
-                                const phonePattern = /Số điện thoại:\s*([^\n]*)/;
-                                const addressPattern = /Địa chỉ:\s*([^\n]*)/;
+            {/* Table */ }
+            <div className="container mx-auto mt-8 p-6 bg-white shadow-xl rounded-xl">
 
-                                const fullName = namePattern.exec(order.shippingAddress)?.[1] || "Không có thông tin";
-                                const phoneNumber = phonePattern.exec(order.shippingAddress)?.[1] || "Không có thông tin";
-                                const addressMatch = addressPattern.exec(order.shippingAddress);
-                                const address = addressMatch ? addressMatch[1] : "Không có thông tin";
 
-                                return (
-                                    <tr key={order.orderId}>
-                                        <td className="border p-3 text-center">{order.orderId}</td>
-                                        <td className="border p-3">
-                                            <div className="flex flex-col space-y-1">
-                                                <span className="font-medium">{fullName}</span>
-                                                <span>{phoneNumber}</span>
-                                            </div>
-                                        </td>
-                                        {/* Chỉ hiển thị địa chỉ */}
-                                        <td className="border p-3">{address}</td>
-                                        <td className="border p-3">{new Date(order.orderDate).toLocaleString("vi-VN")}</td>
-                                        <td className="border p-3">
-                                            {order.totalAmount.toLocaleString("vi-VN")} VND
-                                        </td>
-                                        <td className="border p-3">{order.status}</td>
-                                        <td className="border p-3 text-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedOrders.has(order.orderId)}
-                                                onChange={() => handleCheckboxChange(order.orderId)}
-                                            />
-                                        </td>
-                                        <td className="border p-3 text-center">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedOrderDetails(order); // Lưu thông tin chi tiết đơn hàng
-                                                    setIsModalOpen(true); // Mở modal
-                                                }}
-                                                className="text-[#00b7c0] hover:text-blue-500"
-                                            >
-                                                <i className="fas fa-eye"></i> Xem
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
+                {/* DataTable */}
+                <DataTable
+                    columns={columns}
+                    data={filteredData}
+                    pagination
+                    highlightOnHover
+                    striped
+                    customStyles={{
+                        table: {
+                            style: {
+                                minWidth: "900px", // Đảm bảo bảng đủ rộng
+                            },
+                        },
+                        headCells: {
+                            style: {
+                                fontSize: "1.2rem", // Tăng kích thước chữ trong tiêu đề
+                                fontWeight: "bold",
+                                color: "#333",
+                                padding: "16px", // Thêm khoảng cách trong tiêu đề
+                            },
+                        },
+                        cells: {
+                            style: {
+                                fontSize: "1rem", // Tăng kích thước chữ trong ô dữ liệu
+                                padding: "12px", // Tăng khoảng cách
+                            },
+                        },
+                    }}
+                    noDataComponent={
+                        <div className="text-lg font-medium text-gray-500">
+                            Không tìm thấy đơn hàng nào.
+                        </div>
+                    }
+                />
             </div>
+
 
 
             {/* MODAL Hiển thị chi tiết sản phẩm */}
@@ -259,7 +342,8 @@ const OrderHistory: React.FC = () => {
 
                             return (
                                 <div className="mb-6">
-                                    <h3 className="text-xl font-semibold mb-4">Thông tin đơn hàng #{selectedOrderDetails.orderId}</h3>
+                                    <h3 className="text-xl font-semibold mb-4">Thông tin đơn hàng
+                                        #{selectedOrderDetails.orderId}</h3>
                                     <div className="grid grid-cols-2 gap-4">
 
                                         <p>
@@ -268,11 +352,14 @@ const OrderHistory: React.FC = () => {
                                                 {new Date(selectedOrderDetails.orderDate).toLocaleDateString("vi-VN")}
                                             </span>
                                         </p>
-                                        <p>Trạng thái: <span className="font-medium">{selectedOrderDetails.status}</span></p>
+                                        <p>Trạng thái: <span
+                                            className="font-medium">{selectedOrderDetails.status}</span></p>
                                         <p>Tên người nhận: <span className="font-medium">{recipientName}</span></p>
                                         <p>Số điện thoại: <span className="font-medium">{phoneNumber}</span></p>
                                         <p>Địa chỉ: <span className="font-medium">{address}</span></p>
-                                        <p>Tổng tiền: <span className="font-medium">{selectedOrderDetails.totalAmount.toLocaleString()} VNĐ</span></p>
+                                        <p>Tổng tiền: <span
+                                            className="font-medium">{selectedOrderDetails.totalAmount.toLocaleString()} VNĐ</span>
+                                        </p>
                                     </div>
                                 </div>
                             );
@@ -285,32 +372,32 @@ const OrderHistory: React.FC = () => {
                                 <div className="overflow-y-auto max-h-96">
                                     <table className="w-full border-collapse border border-gray-300">
                                         <thead>
-                                            <tr className="bg-gray-100 text-left">
-                                                <th className="border border-gray-300 p-2">Hình ảnh</th>
-                                                <th className="border border-gray-300 p-2">Tên sản phẩm</th>
-                                                <th className="border border-gray-300 p-2">Màu</th>
-                                                <th className="border border-gray-300 p-2">Size</th>
-                                                <th className="border border-gray-300 p-2">Số lượng</th>
-                                                <th className="border border-gray-300 p-2">Giá</th>
-                                            </tr>
+                                        <tr className="bg-gray-100 text-left">
+                                            <th className="border border-gray-300 p-2">Hình ảnh</th>
+                                            <th className="border border-gray-300 p-2">Tên sản phẩm</th>
+                                            <th className="border border-gray-300 p-2">Màu</th>
+                                            <th className="border border-gray-300 p-2">Size</th>
+                                            <th className="border border-gray-300 p-2">Số lượng</th>
+                                            <th className="border border-gray-300 p-2">Giá</th>
+                                        </tr>
                                         </thead>
                                         <tbody>
-                                            {selectedOrderDetails.orderDetails.map((item, index) => (
-                                                <tr key={index} className="hover:bg-gray-50">
-                                                    <td className="border border-gray-300 p-2">
-                                                        <img
-                                                            src={item.productImage}
-                                                            alt={item.productName}
-                                                            className="w-16 h-16 object-cover"
-                                                        />
-                                                    </td>
-                                                    <td className="border border-gray-300 p-2">{item.productName}</td>
-                                                    <td className="border border-gray-300 p-2">{item.productColor}</td>
-                                                    <td className="border border-gray-300 p-2">{item.productSize}</td>
-                                                    <td className="border border-gray-300 p-2">{item.quantity}</td>
-                                                    <td className="border border-gray-300 p-2">{item.price.toLocaleString()} VNĐ</td>
-                                                </tr>
-                                            ))}
+                                        {selectedOrderDetails.orderDetails.map((item, index) => (
+                                            <tr key={index} className="hover:bg-gray-50">
+                                                <td className="border border-gray-300 p-2">
+                                                    <img
+                                                        src={item.productImage}
+                                                        alt={item.productName}
+                                                        className="w-16 h-16 object-cover"
+                                                    />
+                                                </td>
+                                                <td className="border border-gray-300 p-2">{item.productName}</td>
+                                                <td className="border border-gray-300 p-2">{item.productColor}</td>
+                                                <td className="border border-gray-300 p-2">{item.productSize}</td>
+                                                <td className="border border-gray-300 p-2">{item.quantity}</td>
+                                                <td className="border border-gray-300 p-2">{item.price.toLocaleString()} VNĐ</td>
+                                            </tr>
+                                        ))}
                                         </tbody>
                                     </table>
                                 </div>

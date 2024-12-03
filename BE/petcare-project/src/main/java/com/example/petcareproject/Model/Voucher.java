@@ -12,8 +12,10 @@ public class Voucher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long voucherId;
+    private String name;
     private Date startDate;
     private Date endDate;
     private int quantity;
     private double percents;
+    private double condition;
 }

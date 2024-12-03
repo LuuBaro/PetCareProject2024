@@ -8,6 +8,7 @@ import {
     FiBox,
     FiPackage,
 } from "react-icons/fi";
+import { FaGift } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "/src/assets/logo.png";
 
@@ -60,7 +61,7 @@ const SidebarMenu = () => {
                             to="/"
                             className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
                         >
-                            <FiHome className="w-5 h-5 mr-3" />
+                            <FiHome className="w-5 h-5 mr-3"/>
                             <span>Trang tổng quan</span>
                         </Link>
                     </li>
@@ -72,13 +73,13 @@ const SidebarMenu = () => {
                             onClick={toggleUserDropdown}
                         >
                             <div className="flex items-center">
-                                <FiUser className="w-5 h-5 mr-3" />
+                                <FiUser className="w-5 h-5 mr-3"/>
                                 <span>Quản lý tài khoản</span>
                             </div>
                             {isUserDropdownOpen ? (
-                                <FiChevronUp className="w-4 h-4" />
+                                <FiChevronUp className="w-4 h-4"/>
                             ) : (
-                                <FiChevronDown className="w-4 h-4" />
+                                <FiChevronDown className="w-4 h-4"/>
                             )}
                         </div>
                         <AnimatePresence>
@@ -118,13 +119,13 @@ const SidebarMenu = () => {
                             onClick={toggleProductDropdown}
                         >
                             <div className="flex items-center">
-                                <FiBox className="w-5 h-5 mr-3" />
+                                <FiBox className="w-5 h-5 mr-3"/>
                                 <span>Quản lý sản phẩm</span>
                             </div>
                             {isProductDropdownOpen ? (
-                                <FiChevronUp className="w-4 h-4" />
+                                <FiChevronUp className="w-4 h-4"/>
                             ) : (
-                                <FiChevronDown className="w-4 h-4" />
+                                <FiChevronDown className="w-4 h-4"/>
                             )}
                         </div>
                         <AnimatePresence>
@@ -211,8 +212,19 @@ const SidebarMenu = () => {
                             to="/product-inventory"
                             className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
                         >
-                            <FiPackage className="w-5 h-5 mr-3" />
+                            <FiPackage className="w-5 h-5 mr-3"/>
                             <span>Quản lý đơn hàng</span>
+                        </Link>
+                    </li>
+
+                    {/* Voucher management*/}
+                    <li>
+                        <Link
+                            to="/voucher-management"
+                            className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
+                        >
+                            <FaGift className="w-5 h-5 mr-3"/>
+                            <span>Quản lý Voucher</span>
                         </Link>
                     </li>
                 </ul>
