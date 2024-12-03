@@ -291,6 +291,7 @@ export function Account() {
                         onSave={handleSave}
                     />
                 );
+
             case "orderHistory":
                 return <OrderHistory/>;
             case "favorites":

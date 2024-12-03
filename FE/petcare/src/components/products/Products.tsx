@@ -29,8 +29,10 @@ export default function Products() {
     const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+        window.scrollTo({top: 0, behavior: "smooth"});
     };
 
     // Lấy userId từ localStorage
@@ -400,43 +402,42 @@ export default function Products() {
 
 
                     {/* Load More / Show Less */}
-                    <div className="flex justify-end mt-8 space-x-2">
-                        {totalPages > 1 && (
-                            <>
-                                {/* Nút Trang Trước */}
-                                {currentPage > 1 && (
-                                    <button
-                                        onClick={() => handlePageChange(currentPage - 1)}
-                                        className="px-3 py-1 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
-                                    >
-                                        Trước
-                                    </button>
-                                )}
-
-                                {/* Số Trang */}
-                                {Array.from({length: totalPages}, (_, index) => index + 1).map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        onClick={() => handlePageChange(pageNumber)}
-                                        className={`px-3 py-1 rounded-md ${
-                                            currentPage === pageNumber ? "bg-[#00b7c0] text-white" : "bg-gray-300 text-black"
-                                        } hover:bg-[#008a8f]`}
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                ))}
-
-                                {/* Nút Trang Sau */}
-                                {currentPage < totalPages && (
-                                    <button
-                                        onClick={() => handlePageChange(currentPage + 1)}
-                                        className="px-3 py-1 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
-                                    >
-                                        Tiếp
-                                    </button>
-                                )}
-                            </>
-                        )}
+                    <div className="flex justify-center mt-8">
+                        <button
+                            className={`px-4 py-2 mx-1 rounded ${
+                                currentPage === 1
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "bg-[#00b7c0] text-white hover:bg-[#008a8f]"
+                            }`}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            &lt;
+                        </button>
+                        {Array.from({length: totalPages}, (_, index) => index + 1).map((page) => (
+                            <button
+                                key={page}
+                                className={`px-4 py-2 mx-1 rounded ${
+                                    currentPage === page
+                                        ? "bg-[#00b7c0] text-white"
+                                        : "bg-gray-300 text-black hover:bg-[#008a8f]"
+                                }`}
+                                onClick={() => handlePageChange(page)}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        <button
+                            className={`px-4 py-2 mx-1 rounded ${
+                                currentPage === totalPages
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "bg-[#00b7c0] text-white hover:bg-[#008a8f]"
+                            }`}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            &gt;
+                        </button>
                     </div>
 
 
