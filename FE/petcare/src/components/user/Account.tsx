@@ -294,8 +294,7 @@ export function Account() {
                     />
                 );
 
-                    />
-                );
+
             case "changePassword":
                 return <ChangePassword/>;
 
