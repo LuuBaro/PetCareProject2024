@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Slider from "react-slick";
 import ProductItem from "./ProductItem";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import ArrowForwardIosOutlinedIcon from "@mui/icons-material/ArrowForwardIosOutlined";
 import ArrowBackIosNewOutlinedIcon from "@mui/icons-material/ArrowBackIosNewOutlined";
+
 const products = [
   {
     id: 1,
@@ -51,11 +52,32 @@ const products = [
 ];
 
 export default function TopProduct() {
+  const sliderRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const element = document.getElementById("topProductSlider");
+      const rect = element.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const next = () => sliderRef.current.slickNext();
+  const prev = () => sliderRef.current.slickPrev();
+
   const settings = {
     infinite: true,
     speed: 500,
     slidesToShow: 5,
     slidesToScroll: 1,
+    centerMode: true,
+    centerPadding: "0px",
     responsive: [
       {
         breakpoint: 1024,
@@ -81,42 +103,41 @@ export default function TopProduct() {
     ],
   };
 
-  const sliderRef = React.useRef(null);
-  const next = () => {
-    sliderRef.current.slickNext();
-  };
-  const prev = () => {
-    sliderRef.current.slickPrev();
-  };
-
   return (
-    <>
+      <>
       <span className="block mx-32 text-3xl py-4 font-semibold">
         Top sản phẩm bán chạy
       </span>
-      <div className="mx-32 mb-10 gap-5 relative">
-        <Slider ref={sliderRef} {...settings}>
-          {products.map((product) => (
-            <ProductItem
-              key={product.id}
-              name={product.name}
-              price={product.price}
-              image={product.image}
-              rating={product.rating}
-            />
-          ))}
-        </Slider>
-        <button
-          onClick={prev}
-          className="absolute left-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-          <ArrowBackIosNewOutlinedIcon sx={{ fontSize: "30px" }} />
-        </button>
-        <button
-          onClick={next}
-          className="absolute right-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]">
-          <ArrowForwardIosOutlinedIcon sx={{ fontSize: "30px" }} />
-        </button>
-      </div>
-    </>
+        <div
+            id="topProductSlider"
+            className={`mx-32 mb-10 gap-5 relative transition-opacity duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+        >
+          <Slider ref={sliderRef} {...settings}>
+            {products.map((product) => (
+                <ProductItem
+                    key={product.id}
+                    name={product.name}
+                    price={product.price}
+                    image={product.image}
+                    rating={product.rating}
+                />
+            ))}
+          </Slider>
+          <button
+              onClick={prev}
+              className="absolute left-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]"
+          >
+            <ArrowBackIosNewOutlinedIcon sx={{ fontSize: "30px" }} />
+          </button>
+          <button
+              onClick={next}
+              className="absolute right-[-30px] top-1/2 transform -translate-y-1/2 hover:text-[#00b7c0]"
+          >
+            <ArrowForwardIosOutlinedIcon sx={{ fontSize: "30px" }} />
+          </button>
+        </div>
+      </>
   );
 }
