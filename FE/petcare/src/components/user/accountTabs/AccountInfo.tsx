@@ -1,16 +1,13 @@
 import React from "react";
 
 function AccountInfo({
-
                          avatarUrl,
                          setAvatarUrl,
-
                          userInfo,
                          isEditing,
                          onChange,
                          onSave,
                          onCancel,
-
                          onEdit,
                          onAvatarUpload,
                      }) {
@@ -31,7 +28,6 @@ function AccountInfo({
         } catch (error) {
             console.error("Error in handleAvatarChange:", error);
         }
-
     };
 
     return (
@@ -40,7 +36,6 @@ function AccountInfo({
             Quản lý thông tin hồ sơ để bảo mật tài khoản
         </p>
             <div className="flex items-start">
-
                 <div className="flex flex-col items-center mr-12">
                     <div
                         className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
@@ -74,20 +69,6 @@ function AccountInfo({
                         onChange={handleAvatarChange}
                         className="hidden"
                     />
-
-                {/* Avatar Section */}
-                <div className="flex flex-col items-center mr-12">
-                    <div
-                        className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
-                        <span className="text-5xl text-blue-400">👤</span>
-                        <button className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full shadow-md">
-                            <i className="fas fa-pencil-alt text-white"></i>
-                        </button>
-                    </div>
-                    <button className="mt-4 text-sm text-blue-500 font-semibold">
-                        Thay đổi ảnh đại diện
-                    </button>
-
                 </div>
 
                 {/* Information Section */}
@@ -131,21 +112,12 @@ function AccountInfo({
                                 <span className="text-gray-900 text-lg flex-grow">
                                     {userInfo.address || 'Chưa cập nhật'}
                                 </span>
-
                                 {/*<button*/}
                                 {/*    onClick={onEdit} // Xử lý cập nhật địa chỉ*/}
                                 {/*    className="text-blue-500 text-sm font-semibold ml-2"*/}
                                 {/*>*/}
                                 {/*    Cập nhật*/}
                                 {/*</button>*/}
-
-                                <button
-                                    onClick={onEdit} // Xử lý cập nhật địa chỉ
-                                    className="text-blue-500 text-sm font-semibold ml-2"
-                                >
-                                    Cập nhật
-                                </button>
-
                             </div>
 
                             {/* Phone Number */}
@@ -155,24 +127,14 @@ function AccountInfo({
                                     <input
                                         type="text"
                                         name="phone"
-
                                         value={userInfo.phone || ""}
-
-                                        value={userInfo.phone}
-
                                         onChange={onChange}
                                         className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow"/>
                                 ) : (
                                     <span className="text-gray-900 text-lg flex-grow">
-
                                         {userInfo.phone && userInfo.phone.trim() !== "null"
                                             ? `****${userInfo.phone.slice(-3)}`
                                             : "Chưa cập nhật"}
-
-                                        {userInfo.phone
-                                            ? `****${userInfo.phone.slice(-3)}`
-                                            : 'Chưa cập nhật'}
-
                                     </span>
                                 )}
                             </div>

@@ -11,6 +11,21 @@ export default function CatProduct() {
     const [products, setProducts] = useState([]);
     const [favorites, setFavorites] = useState([]);
     const [userId, setUserId] = useState(null);
+    const [isVisible, setIsVisible] = useState(false);
+    useEffect(() => {
+        const handleScroll = () => {
+            const element = document.getElementById('animatedElement');
+            const rect = element.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                setIsVisible(true);
+            } else {
+                setIsVisible(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Hàm tạo giá ngẫu nhiên
     const getRandomPrice = () => Math.floor(Math.random() * (500000 - 50000 + 1)) + 50000;
@@ -131,6 +146,15 @@ export default function CatProduct() {
 
     return (
         <div className="mx-32 mb-5">
+            <div
+                id="animatedElement"
+                style={{
+                    opacity: isVisible ? 1 : 0,
+                    transform: isVisible ? 'translateY(0)' : 'translateY(100px)', // Dịch chuyển mạnh hơn
+                    transition: 'all 1s cubic-bezier(0.25, 0.8, 0.25, 1)', // Hiệu ứng mềm mại hơn
+                }}
+
+            >
             <h2 className="text-3xl py-4 font-semibold">Gợi ý sản phẩm</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 {products.map((product) => (
@@ -148,6 +172,7 @@ export default function CatProduct() {
                         </Link>
                     </div>
                 ))}
+            </div>
             </div>
         </div>
     );
