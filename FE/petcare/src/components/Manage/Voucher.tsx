@@ -62,6 +62,7 @@ const VoucherManagement: React.FC = () => {
             }
 
             // Kiểm tra giá giảm không được bằng 0 hoặc số âm
+
             if (formData.percents <= 0) {
                 await Swal.fire({
                     icon: "error",
@@ -70,6 +71,17 @@ const VoucherManagement: React.FC = () => {
                 });
                 return;
             }
+
+            // Kiểm tra giá giảm không được quá 70%
+            if (formData.percents > 70) {
+                await Swal.fire({
+                    icon: "error",
+                    title: "Lỗi giảm giá",
+                    text: "Giảm giá không được lớn hơn 70%.",
+                });
+                return;
+            }
+
 
             // Kiểm tra điều kiện không được là số âm
             if (formData.condition < 0) {
@@ -170,10 +182,6 @@ const VoucherManagement: React.FC = () => {
     };
 
 
-
-
-
-
     const openEditModal = (voucher: any) => {
         setFormData({
             name: voucher.name,
@@ -206,6 +214,7 @@ const VoucherManagement: React.FC = () => {
     const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString("vi-VN");
     };
+
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">

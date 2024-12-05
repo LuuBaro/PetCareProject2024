@@ -275,13 +275,13 @@ const OrderHistory: React.FC = () => {
 
             {/* Table */ }
             <div className="container mx-auto mt-8 p-6 bg-white shadow-xl rounded-xl">
-
-
                 {/* DataTable */}
                 <DataTable
                     columns={columns}
                     data={filteredData}
                     pagination
+                    paginationPerPage={5} // Số lượng đơn hàng hiển thị trên mỗi trang
+                    paginationRowsPerPageOptions={[5]} // Chỉ hiển thị tùy chọn 5 hàng mỗi trang
                     highlightOnHover
                     striped
                     customStyles={{
@@ -312,6 +312,7 @@ const OrderHistory: React.FC = () => {
                     }
                 />
             </div>
+
 
 
 

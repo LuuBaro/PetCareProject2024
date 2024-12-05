@@ -90,7 +90,7 @@ function Favorites() {
 
                                 {/* Phần hiển thị thông tin cơ bản dưới hình ảnh */}
                                 <div className="p-4">
-                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{favourite.product.productName}</h3>
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2 truncate">{favourite.product.productName}</h3>
                                     <p className="text-sm text-gray-600 mb-2 truncate">{favourite.product.description}</p>
                                 </div>
                             </div>
