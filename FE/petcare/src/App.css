@@ -186,3 +186,50 @@ body {
   z-index: 9999 !important; /* Đảm bảo toastr luôn ở trên các thành phần khác */
 }
 
+.fly-to-cart {
+  width: 50px; /* Kích thước ảnh ban đầu */
+  height: 50px;
+  z-index: 9999;
+  position: absolute;
+  pointer-events: none; /* Ngăn ảnh bị tương tác */
+  transition: all 0.6s ease-in-out; /* Đảm bảo di chuyển mượt mà */
+  opacity: 0; /* Bắt đầu với opacity = 0 */
+  left: 50%; /* Đưa ảnh ra giữa màn hình theo chiều ngang */
+  top: 50%; /* Đưa ảnh ra giữa màn hình theo chiều dọc */
+  transform: translate(-50%, -50%); /* Căn giữa hoàn hảo */
+  border-radius: 50%; /* Làm cho ảnh tròn nếu cần */
+  object-fit: cover; /* Đảm bảo ảnh không bị méo */
+}
+
+/* Hiệu ứng khi hình ảnh đã bay đến giỏ hàng */
+.fly-to-cart.active {
+  opacity: 1;
+  width: 30px; /* Thu nhỏ ảnh khi bay vào giỏ hàng */
+  height: 30px; /* Thu nhỏ ảnh khi bay vào giỏ hàng */
+  transform: translate(-50%, -50%) scale(0.5) translateY(-150px); /* Thu nhỏ và di chuyển lên trên */
+}
+
+/*.fly-to-cart {*/
+/*  position: absolute;*/
+/*  transition: all 0.5s ease-in-out;*/
+/*  pointer-events: none;*/
+/*  z-index: 9999;*/
+/*}*/
+
+/*.fly-to-cart.active {*/
+/*  transition: all 0.5s ease-in-out;*/
+/*  transform: scale(0.1);*/
+/*}*/
+
+
+.sticky-header {
+  position: sticky;
+  top: 0; /* Giữ header ở trên cùng khi cuộn xuống */
+  z-index: 1000; /* Đảm bảo header luôn hiển thị trên các phần tử khác */
+  background-color: #00B7C0; /* Màu nền cho header */
+}
+
+
+
+
+

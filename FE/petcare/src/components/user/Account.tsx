@@ -306,7 +306,7 @@ export function Account() {
             <Header/>
 
             <div className="flex-grow mx-32 p-10 bg-white rounded-lg flex mt-5">
-                <Sidebar setActiveTab={setActiveTab} avatarUrl={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "default-avatar-url.jpg"} />
+                <Sidebar setActiveTab={setActiveTab} avatarUrl={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"} />
                 <div
                     className="w-3/4 pl-10 bg-gray-100"
                     style={{minHeight: '70vh', display: 'flex', flexDirection: 'column'}}

@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import axios from "axios";
+import DataTable, {TableColumn} from "react-data-table-component";
 
 interface OrderDetail {
     productDetailId: number;
@@ -25,6 +26,7 @@ interface Order {
 }
 
 const OrderManagement: React.FC = () => {
+    const [hoveredRow, setHoveredRow] = useState(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [activeTab, setActiveTab] = useState<string>("all");
@@ -35,11 +37,23 @@ const OrderManagement: React.FC = () => {
     const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
     const [searchTerm, setSearchTerm] = useState<string>(""); // Trường tìm kiếm
     const cancelReasons = [
-       "Hết hàng",
-    "Giao hàng không thành công",
-    "Khách hàng không thanh toán",
-    "Khác"
+        "Hết hàng",
+        "Giao hàng không thành công",
+        "Khách hàng không thanh toán",
+        "Khác"
     ];
+
+    const handleMouseEnter = (row, e) => {
+        setHoveredRow({
+            ...row,
+            tooltipX: e.clientX + 10, // Tọa độ X của tooltip (thêm khoảng cách)
+            tooltipY: e.clientY + 10, // Tọa độ Y của tooltip (thêm khoảng cách)
+        });
+    };
+
+    const handleMouseLeave = () => {
+        setHoveredRow(null);
+    };
 
     const tabs = [
         {id: "all", label: "Tất cả"},
@@ -97,7 +111,7 @@ const OrderManagement: React.FC = () => {
     // Lọc đơn hàng dựa trên tab hiện tại và từ khóa tìm kiếm
     const filteredOrders = orders
         // Bước 1: Lọc theo tab hiện tại (nếu không phải "all")
-        .filter((order) => activeTab === "all" || order.status?.toLowerCase() === activeTab.toLowerCase())
+        .filter((order) => activeTab === "all" || (order.status && order.status.toLowerCase() === activeTab.toLowerCase()))
         // Bước 2: Lọc tiếp theo từ khóa tìm kiếm
         .filter((order) => {
             const searchLower = searchTerm.toLowerCase();
@@ -127,6 +141,78 @@ const OrderManagement: React.FC = () => {
             return orderInfo.some((field) => field.includes(searchLower)) || productInfo;
         });
 
+    const columns: TableColumn<Order>[] = [
+        {
+            name: "",
+            cell: (row) => (
+                <input
+                    type="checkbox"
+                    checked={selectedOrders.has(row.orderId)}
+                    onChange={() => handleCheckboxChange(row.orderId)}
+                />
+            ),
+            width: "50px",
+            center: true,
+        },
+        {
+            name: "Mã đơn hàng",
+            selector: (row) => `#${row.orderId}`,
+            sortable: true,
+            grow: 0.7,
+            center: true,
+            style: {
+                fontWeight: "bold",
+                color: "#333",
+            },
+        },
+        {
+            name: "Doanh thu",
+            selector: (row) => row.totalAmount.toLocaleString() + " VNĐ",
+            sortable: true,
+            grow: 0.7,
+        },
+        {
+            name: "Phương thức thanh toán",
+            selector: (row) => row.paymentMethod,
+            sortable: true,
+            grow: 1.2,
+        },
+        {
+            name: "Thời gian đặt hàng",
+            selector: (row) => new Date(row.orderDate).toLocaleString(),
+            sortable: true,
+        },
+        {
+            name: "Người nhận",
+            selector: (row) => {
+                const fullName = /Họ và tên:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin";
+                const phoneNumber = /Số điện thoại:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin";
+                return (
+                    <div>
+                        <div>{fullName}</div>
+                        <div>{phoneNumber}</div>
+                    </div>
+                );
+            },
+            sortable: false,
+            grow: 0.6,
+            wrap: true,
+        },
+        {
+            name: "Địa chỉ",
+            selector: (row) => /Địa chỉ:\s*([^\n]*)/.exec(row.shippingAddress)?.[1] || "Không có thông tin",
+            sortable: false,
+            grow: 2, // Tăng chiều rộng cột
+            wrap: true,
+        },
+        {
+            name: "Trạng thái",
+            cell: (row) => (
+                <span className={getStatusColor(row.status)}>{row.status}</span>
+            ),
+            sortable: true,
+        },
+    ];
 
     const handleCheckboxChange = (orderId: number) => {
         const updatedSelection = new Set(selectedOrders);
@@ -298,59 +384,79 @@ const OrderManagement: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-                {filteredOrders.length === 0 ? (
-                    <div className="text-center text-gray-600">
-                        Không tìm thấy đơn hàng nào.
-                    </div>
-                ) : (
-                    <table className="min-w-full border-collapse bg-white shadow-md">
-                        <thead className="bg-gray-100 text-gray-600 text-sm">
-                        <tr>
-                            <th className="border p-2">Sản phẩm</th>
-                            <th className="border p-2">Doanh thu đơn hàng</th>
-                            <th className="border p-2">Phương thức thanh toán</th>
-                            <th className="border p-2">Thời gian tạo đơn</th>
-                            <th className="border p-2">Thông tin khách hàng</th>
-                            <th className="border p-2">Trạng thái</th>
-                            <th className="border p-2">Chọn</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                            {filteredOrders.map((order) => (
-                                <tr key={order.orderId} className="text-sm hover:bg-gray-50">
-                                    <td className="border p-2">
-                                        {order.orderDetails.map((detail) => (
-                                            <div key={detail.productId} className="flex items-center mb-2">
-                                                <img
-                                                    src={detail.productImage}
-                                                    alt={detail.productName}
-                                                    className="w-16 h-16 object-cover rounded mr-2"
-                                                />
-                                                <span>{detail.productName} (x{detail.quantity})</span>
-                                            </div>
-                                        ))}
-                                    </td>
-                                    <td className="border p-2">{order.totalAmount.toLocaleString()} VNĐ</td>
-                                    <td className="border p-2">{order.paymentMethod}</td>
-                                    <td className="border p-2">{new Date(order.orderDate).toLocaleString()}</td>
-                                    <td className="border p-2">
-                                        {order.fullName} - {order.phoneNumber} - {order.email}
-                                    </td>
-                                    <td className={`border p-2 ${getStatusColor(order.status)}`}>
-                                        {order.status}
-                                    </td>
-                                    <td className="border p-2 text-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedOrders.has(order.orderId)}
-                                            onChange={() => handleCheckboxChange(order.orderId)}
-                                        />
-                                    </td>
-                                </tr>
+                <>
+                    <DataTable
+                        columns={columns}
+                        data={filteredOrders}
+                        pagination
+                        highlightOnHover
+                        noDataComponent={
+                            <div style={{fontWeight: "bold", textAlign: "center", margin: "20px"}}>
+                                Không tìm thấy đơn hàng nào.
+                            </div>
+                        }
+                        onRowMouseEnter={(row, e) => handleMouseEnter(row, e)}
+                        onRowMouseLeave={handleMouseLeave}
+                        customStyles={{
+                            rows: {
+                                style: {
+                                    position: "relative", // Tooltip hiển thị chính xác
+                                },
+                            },
+                            headCells: {
+                                style: {
+                                    fontSize: "0.7rem", // Tăng kích thước chữ trong tiêu đề
+                                    fontWeight: "bold",
+                                    color: "#333",
+                                    padding: "16px", // Thêm khoảng cách trong tiêu đề
+                                },
+                            },
+                        }}
+                    />
+
+                    {/* Tooltip hiển thị sản phẩm */}
+                    {hoveredRow && (
+                        <div
+                            style={{
+                                position: "fixed",
+                                top: `${hoveredRow.tooltipY}px`,
+                                left: `${hoveredRow.tooltipX}px`,
+                                backgroundColor: "#fff",
+                                border: "1px solid #ddd",
+                                borderRadius: "8px",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                                padding: "8px",
+                                zIndex: 10,
+                            }}
+                        >
+                            {hoveredRow.orderDetails.map((detail) => (
+                                <div
+                                    key={detail.productId}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        marginBottom: "8px",
+                                    }}
+                                >
+                                    <img
+                                        src={detail.productImage}
+                                        alt={detail.productName}
+                                        style={{
+                                            width: "48px",
+                                            height: "48px",
+                                            objectFit: "cover",
+                                            borderRadius: "4px",
+                                            marginRight: "8px",
+                                        }}
+                                    />
+                                    <span>
+                                        {detail.productName} (x{detail.quantity})
+                                    </span>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-                )}
+                        </div>
+                    )}
+                </>
             </div>
 
             {showCancelModal && (

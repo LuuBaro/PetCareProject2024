@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../header/Header";
 import toastr from "toastr";
+import { useCart } from "./CartContext"; // Import CartContext
 
 interface Product {
   cartDetailId: number;
@@ -22,6 +23,7 @@ const Cart: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const [cartCount, setCartCount] = useState<number>(0);
 
   const userId = localStorage.getItem("userId");
 
@@ -33,45 +35,55 @@ const Cart: React.FC = () => {
     loadCart();
   }, [userId]);
 
+  useEffect(() => {
+    loadCart();
+  }, []);
+
   const loadCart = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/cart/user/${userId}`
-      );
+      const response = await axios.get(`http://localhost:8080/api/cart/user/${userId}`);
       const cartItems = response.data || [];
-
       const productsData = cartItems.map((item: any) => ({
         cartDetailId: item.cartDetailId,
-        productDetailId: item.productDetail.productDetailId, // Lấy productDetailId
+        productDetailId: item.productDetail.productDetailId,
         productId: item.productDetail.product.productId,
         image: item.productDetail.product.imageUrl,
         productName: item.productDetail.product.productName,
         price: item.productDetail.price,
         quantity: item.quantityItem,
-        color: item.productDetail.productColor?.color || 'Màu không xác định', // Sửa lại truy xuất đúng tên
-        weight: item.productDetail.productWeight?.weightValue || 'Cân nặng không xác định', // Cũng cần kiểm tra đúng tên cho cân nặng
-        size: item.productDetail.productSize?.productSize || 'Kích thước không xác định', // Lấy size sản phẩm
+        color: item.productDetail.productColor?.color || 'Màu không xác định',
+        weight: item.productDetail.productWeight?.weightValue || 'Cân nặng không xác định',
+        size: item.productDetail.productSize?.productSize || 'Kích thước không xác định',
       }));
+
       setProducts(productsData);
+
+      // Cập nhật số lượng giỏ hàng
+      const totalQuantity = cartItems.reduce((acc: number, item: any) => acc + item.quantityItem, 0);
+      setCartCount(totalQuantity); // Cập nhật số lượng giỏ hàng
     } catch (error) {
       setError("Đã xảy ra lỗi khi tải giỏ hàng.");
-      console.error("Error loading cart:", error);
     } finally {
       setLoading(false);
     }
   };
 
+
   const handleRemoveItem = async (cartDetailId: number) => {
     try {
       await axios.delete(
-        `http://localhost:8080/api/cart/remove/${cartDetailId}`,
-        {
-          data: { userId: userId },
-        }
+          `http://localhost:8080/api/cart/remove/${cartDetailId}`,
+          {
+            data: { userId: userId },
+          }
       );
       setProducts(
-        products.filter((product) => product.cartDetailId !== cartDetailId)
+          products.filter((product) => product.cartDetailId !== cartDetailId)
       );
+
+      // Cập nhật lại số lượng giỏ hàng
+      const updatedCartCount = products.filter((product) => product.cartDetailId !== cartDetailId).reduce((acc, item) => acc + item.quantity, 0);
+      setCartCount(updatedCartCount); // Cập nhật lại số lượng trong CartContext
     } catch (error) {
       setError("Đã xảy ra lỗi khi xóa sản phẩm khỏi giỏ hàng.");
       console.error("Error removing item:", error);
@@ -88,8 +100,6 @@ const Cart: React.FC = () => {
       return;
     }
 
-
-
     // Tìm sản phẩm tương ứng trong giỏ hàng
     const cartProduct = products.find(product => product.cartDetailId === cartDetailId);
     const productDetailId = cartProduct ? cartProduct.productDetailId : null; // Lấy productDetailId từ sản phẩm
@@ -99,20 +109,16 @@ const Cart: React.FC = () => {
       return;
     }
 
-    // Lấy thông tin ProductDetail từ backend hoặc từ state nếu đã có
     try {
       const productDetailResponse = await axios.get(`http://localhost:8080/api/product-details/${productDetailId}`);
       const productDetail = productDetailResponse.data;
-
       const stockAvailable = productDetail ? productDetail.quantity : 0; // Lấy số lượng sản phẩm có sẵn từ ProductDetail
 
-      // Kiểm tra số lượng muốn cập nhật không được vượt quá số lượng có sẵn
       if (quantityItem > stockAvailable) {
-        toastr.error(`Số lượng không được vượt quá ${stockAvailable}.`); // Thông báo lỗi
-        return; // Không thực hiện cập nhật nếu vượt quá số lượng có sẵn
+        toastr.error(`Số lượng không được vượt quá ${stockAvailable}.`);
+        return;
       }
 
-      // Gửi request cập nhật số lượng vào giỏ hàng
       const response = await axios.put(
           `http://localhost:8080/api/cart/update`,
           {
@@ -123,20 +129,24 @@ const Cart: React.FC = () => {
       );
 
       if (response.status === 200) {
-
         // Cập nhật trạng thái sản phẩm với số lượng mới
         setProducts(prevProducts =>
             prevProducts.map(product =>
                 product.cartDetailId === cartDetailId
-                    ? { ...product, quantity: quantityItem } // Cập nhật số lượng
-                    : product // Giữ nguyên các sản phẩm khác
+                    ? { ...product, quantity: quantityItem }
+                    : product
             )
         );
+
+        // Cập nhật lại số lượng giỏ hàng
+        const updatedCartCount = products.reduce((acc, item) => acc + item.quantity, 0);
+        setCartCount(updatedCartCount);
       }
     } catch (error) {
       console.error("Error updating quantity:", error.response ? error.response.data : error.message);
     }
   };
+
 
 
   // useEffect(() => {

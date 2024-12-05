@@ -41,6 +41,8 @@ const ProductDetail = () => {
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  const [filteredDetails, setFilteredDetails] = useState([]);
+
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
@@ -200,26 +202,15 @@ const ProductDetail = () => {
   // Handle selection and update current detail
   const handleSelection = (type, value) => {
     if (type === "color") {
-      setSelectedColor(value === selectedColor ? null : value); // Toggle selection
+      setSelectedColor(value === selectedColor ? null : value); // Toggle color selection
     } else if (type === "size") {
-      setSelectedSize(value === selectedSize ? null : value); // Toggle selection
+      setSelectedSize(value === selectedSize ? null : value); // Toggle size selection
     } else if (type === "weight") {
-      setSelectedWeight(value === selectedWeight ? null : value); // Toggle selection
+      setSelectedWeight(value === selectedWeight ? null : value); // Toggle weight selection
     }
   };
 
-  // Update current detail based on selected attributes
-  useEffect(() => {
-    const matchingDetail = productDetails.find(
-        (detail) =>
-            (!selectedColor || detail.productColor.color === selectedColor) &&
-            (!selectedSize || detail.productSize.productSize === selectedSize) &&
-            (!selectedWeight || detail.productWeight.weightValue === selectedWeight)
-    );
-
-    setCurrentDetail(matchingDetail || null);
-  }, [selectedColor, selectedSize, selectedWeight, productDetails]);
-
+  // Lọc các chi tiết sản phẩm theo các thuộc tính đã chọn
   const getFilteredOptions = () => {
     const filteredDetails = productDetails.filter(
         (detail) =>
@@ -228,14 +219,26 @@ const ProductDetail = () => {
             (!selectedWeight || detail.productWeight.weightValue === selectedWeight)
     );
 
+    // Lấy tất cả các tùy chọn màu sắc, kích thước, trọng lượng từ các chi tiết sản phẩm đã lọc
     const validColors = [...new Set(filteredDetails.map((detail) => detail.productColor.color))];
     const validSizes = [...new Set(filteredDetails.map((detail) => detail.productSize.productSize))];
     const validWeights = [...new Set(filteredDetails.map((detail) => detail.productWeight.weightValue))];
 
-    return { validColors, validSizes, validWeights };
+    return { validColors, validSizes, validWeights, filteredDetails };
   };
 
   const { validColors, validSizes, validWeights } = getFilteredOptions();
+
+  // Cập nhật currentDetail khi có sự thay đổi
+  useEffect(() => {
+    const matchingDetail = productDetails.find(
+        (detail) =>
+            (!selectedColor || detail.productColor.color === selectedColor) &&
+            (!selectedSize || detail.productSize.productSize === selectedSize) &&
+            (!selectedWeight || detail.productWeight.weightValue === selectedWeight)
+    );
+    setCurrentDetail(matchingDetail || null);
+  }, [selectedColor, selectedSize, selectedWeight, productDetails]);
 
   const updateQuantity = (action) => {
     setQuantity((prev) => (action === "increment" ? prev + 1 : Math.max(prev - 1, 1)));
@@ -274,33 +277,67 @@ const ProductDetail = () => {
       return;
     }
 
+    // Tạo hiệu ứng "fly to cart"
+    const productImage = document.querySelector(".product-image img");
+    const cartIcon = document.querySelector(".cart-icon-container");
+
+    if (!productImage || !cartIcon) {
+      console.error("Không tìm thấy hình ảnh sản phẩm hoặc giỏ hàng!");
+      return;
+    }
+
+    // Tạo phần tử flyElement với background image thay vì <img>
+    const flyElement = document.createElement("div");
+    flyElement.classList.add("fly-to-cart");
+    flyElement.style.backgroundImage = `url(${productImage.src})`;
+    flyElement.style.backgroundSize = "cover"; // Đảm bảo ảnh luôn vừa với container
+    document.body.appendChild(flyElement);
+
+    // Lấy vị trí của giỏ hàng và cửa sổ người dùng
+    const cartRect = cartIcon.getBoundingClientRect();
+
+    // Đảm bảo vị trí bắt đầu là ở giữa cửa sổ trình duyệt, không bị ảnh hưởng bởi cuộn trang
+    const windowCenterX = window.innerWidth / 2;
+    const windowCenterY = window.innerHeight / 2;
+
+    // Đặt vị trí bắt đầu của phần tử "flyElement" ở giữa màn hình người dùng
+    flyElement.style.left = `${windowCenterX - flyElement.offsetWidth / 2}px`;
+    flyElement.style.top = `${windowCenterY - flyElement.offsetHeight / 2}px`;
+
+    // Đặt kích thước ban đầu của flyElement
+    flyElement.style.width = `${productImage.width}px`;
+    flyElement.style.height = `${productImage.height}px`;
+
+    // Kích hoạt hiệu ứng "fly to cart"
+    setTimeout(() => {
+      flyElement.classList.add("active");
+    }, 10);
+
+    // Di chuyển phần tử flyElement về giỏ hàng sau khi hiệu ứng bắt đầu
+    setTimeout(() => {
+      // Tính toán vị trí giỏ hàng sau khi cuộn trang
+      const cartPosition = cartRect.top + window.scrollY;
+
+      flyElement.style.left = `${cartRect.left + window.scrollX}px`;  // Cộng thêm cuộn ngang
+      flyElement.style.top = `${cartPosition}px`; // Cộng thêm vị trí cuộn trang để chính xác hơn
+      flyElement.style.width = "30px"; // Kích thước nhỏ cho giỏ hàng
+      flyElement.style.height = "30px"; // Kích thước nhỏ cho giỏ hàng
+    }, 500);
+
+    // Sau khi hiệu ứng hoàn tất, xóa phần tử
+    setTimeout(() => {
+      flyElement.remove();
+    }, 1000);
+
     try {
-      // Lấy thông tin tồn kho từ biến thể được chọn
-      const selectedStock = currentDetail?.quantity; // Lấy quantity từ currentDetail thay vì stockAvailable
-
-      // Kiểm tra xem stockAvailable có tồn tại không
-      if (selectedStock === undefined) {
-        toastr.error("Thông tin tồn kho không hợp lệ.");
-        return;
-      }
-
-      // Gọi hàm addToCart với các tham số chi tiết hơn
       const cartDetail = await CartService.addToCart(
-          currentDetail.productDetailId,         // productDetailId
-          quantity,                              // Số lượng cần thêm
-          localStorage.getItem("userId"),        // ID người dùng
-          token,                                  // Token xác thực
-          currentDetail.product.productName,     // Tên sản phẩm
-          selectedStock,                          // Số lượng tồn kho
-          selectedColor,                          // Màu sắc được chọn
-          selectedSize,                           // Kích thước được chọn
-          selectedWeight                          // Trọng lượng được chọn
+          currentDetail.productDetailId, quantity, localStorage.getItem("userId"), token,
+          currentDetail.product.productName, currentDetail?.quantity, selectedColor,
+          selectedSize, selectedWeight
       );
 
-      // Nếu thành công, thông báo và cập nhật giỏ hàng
-      // if (cartDetail) {
-      //   toastr.success("Sản phẩm đã được thêm vào giỏ hàng!");
-      // }
+      // Cập nhật lại giao diện giỏ hàng
+      // toastr.success("Sản phẩm đã được thêm vào giỏ hàng!");
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
       toastr.error("Không thể thêm sản phẩm vào giỏ hàng.");
@@ -355,31 +392,31 @@ const ProductDetail = () => {
       <>
         <Header/>
         {/* Background Section for Product Name */}
-        <div
-            className="product-name-bg w-full h-[280px] bg-cover bg-center flex flex-col justify-center items-center mb-3"
-            style={{ backgroundImage: `url('https://theme.hstatic.net/200000521195/1000872898/14/bg_breadcrumb.jpg?v=236')` }} // Thêm URL của hình nền vào đây
-        >
-          {/* Product Name */}
-          <h2 className="text-5xl text-white font-bold mb-2">
-            {currentDetail?.product?.productName || "Tên sản phẩm"}
-          </h2>
+        {/*<div*/}
+        {/*    className="product-name-bg w-full h-[280px] bg-cover bg-center flex flex-col justify-center items-center mb-3"*/}
+        {/*    style={{ backgroundImage: `url('https://theme.hstatic.net/200000521195/1000872898/14/bg_breadcrumb.jpg?v=236')` }} // Thêm URL của hình nền vào đây*/}
+        {/*>*/}
+        {/*  /!* Product Name *!/*/}
+        {/*  <h2 className="text-5xl text-white font-bold mb-2">*/}
+        {/*    {currentDetail?.product?.productName || "Tên sản phẩm"}*/}
+        {/*  </h2>*/}
 
-          {/* Link to Products Page */}
-          <div className="text-lg font-bold">
-            <a href="/products" className="text-white font-medium">
-              <span>Sản phẩm</span> &nbsp;
-            </a>
-            <i className="fa fa-angle-right text-white"></i>
-            <span className=" px-2 text-[#00b7c0]">
-            {currentDetail?.product?.productName || "Tên sản phẩm"}
-          </span>
-          </div>
-        </div>
+        {/*  /!* Link to Products Page *!/*/}
+        {/*  <div className="text-lg font-bold">*/}
+        {/*    <a href="/products" className="text-white font-medium">*/}
+        {/*      <span>Sản phẩm</span> &nbsp;*/}
+        {/*    </a>*/}
+        {/*    <i className="fa fa-angle-right text-white"></i>*/}
+        {/*    <span className=" px-2 text-[#00b7c0]">*/}
+        {/*    {currentDetail?.product?.productName || "Tên sản phẩm"}*/}
+        {/*  </span>*/}
+        {/*  </div>*/}
+        {/*</div>*/}
 
         <div className="product-detail-container p-2 md:p-8 flex flex-wrap gap-6 bg-gray-50 rounded-lg ">
           {/* Image Section */}
           <div className="product-image-section w-full md:w-1/2 flex justify-center items-start flex-col">
-            <div className="relative mb-4">
+            <div className="relative mb-4 product-image">
               <img
                   src={currentDetail?.product?.imageUrl || "default_image.jpg"}
                   alt={currentDetail?.product?.productName || "Product"}
@@ -440,78 +477,81 @@ const ProductDetail = () => {
 
             </div>
 
-
-            {/* Options */}
+            {/* Options  */}
             <div className="options-section">
+              {/* Hiển thị màu sắc */}
               {validColors.length > 0 && (
                   <div className="mb-4">
                     <h3 className="font-medium text-gray-700 text-lg">Màu sắc</h3>
                     <div className="flex gap-2 mt-2">
-                      {colors.map((color) =>
-                          validColors.includes(color.color) ? (
-                              <button
-                                  key={color.id}
-                                  onClick={() => handleSelection("color", color.color)}
-                                  className={`py-3 px-3 rounded-md ${
-                                      selectedColor === color.color
-                                          ? "bg-[#00b7c0] text-white"
-                                          : "bg-gray-200 text-gray-600"
-                                  } hover:bg-[#008a8f] hover:text-white transition`}
-                              >
-                                {color.color}
-                              </button>
-                          ) : null
-                      )}
+                      {validColors.map((color) => (
+                          <button
+                              key={color}
+                              onClick={() => handleSelection("color", color)}
+                              className={`py-3 px-3 rounded-md ${
+                                  selectedColor === color
+                                      ? "bg-[#00b7c0] text-white" // Highlight selected color
+                                      : "bg-gray-200 text-gray-600" // Non-selected color
+                              } hover:bg-[#008a8f] hover:text-white transition`}
+                          >
+                            {color}
+                          </button>
+                      ))}
                     </div>
                   </div>
               )}
 
+              {/* Hiển thị kích thước */}
               {validSizes.length > 0 && (
                   <div className="mb-4">
                     <h3 className="font-medium text-gray-700 text-lg">Kích thước</h3>
                     <div className="flex gap-2 mt-2">
-                      {sizes.map((size) =>
-                          validSizes.includes(size.productSize) ? (
-                              <button
-                                  key={size.id}
-                                  onClick={() => handleSelection("size", size.productSize)}
-                                  className={`py-2 px-3 rounded-md ${
-                                      selectedSize === size.productSize
-                                          ? "bg-[#00b7c0] text-white"
-                                          : "bg-gray-200 text-gray-600"
-                                  } hover:bg-[#008a8f] hover:text-white transition`}
-                              >
-                                {size.productSize}
-                              </button>
-                          ) : null
-                      )}
+                      {validSizes.map((size) => (
+                          <button
+                              key={size}
+                              onClick={() => handleSelection("size", size)}
+                              className={`py-2 px-3 rounded-md ${
+                                  selectedSize === size
+                                      ? "bg-[#00b7c0] text-white" // Highlight selected size
+                                      : "bg-gray-200 text-gray-600" // Non-selected size
+                              } hover:bg-[#008a8f] hover:text-white transition`}
+                              disabled={selectedColor && !productDetails.some(
+                                  (detail) => detail.productColor.color === selectedColor && detail.productSize.productSize === size
+                              )}
+                          >
+                            {size}
+                          </button>
+                      ))}
                     </div>
                   </div>
               )}
 
+              {/* Hiển thị trọng lượng */}
               {validWeights.length > 0 && (
                   <div className="mb-4">
                     <h3 className="font-medium text-gray-700 text-lg">Trọng lượng</h3>
                     <div className="flex gap-2 mt-2">
-                      {weights.map((weight) =>
-                          validWeights.includes(weight.weightValue) ? (
-                              <button
-                                  key={weight.id}
-                                  onClick={() => handleSelection("weight", weight.weightValue)}
-                                  className={`py-2 px-3 rounded-md ${
-                                      selectedWeight === weight.weightValue
-                                          ? "bg-[#00b7c0] text-white"
-                                          : "bg-gray-200 text-gray-600"
-                                  } hover:bg-[#008a8f] hover:text-white transition`}
-                              >
-                                {weight.weightValue}
-                              </button>
-                          ) : null
-                      )}
+                      {validWeights.map((weight) => (
+                          <button
+                              key={weight}
+                              onClick={() => handleSelection("weight", weight)}
+                              className={`py-2 px-3 rounded-md ${
+                                  selectedWeight === weight
+                                      ? "bg-[#00b7c0] text-white" // Highlight selected weight
+                                      : "bg-gray-200 text-gray-600" // Non-selected weight
+                              } hover:bg-[#008a8f] hover:text-white transition`}
+                              disabled={selectedColor && !productDetails.some(
+                                  (detail) => detail.productColor.color === selectedColor && detail.productWeight.weightValue === weight
+                              )}
+                          >
+                            {weight}
+                          </button>
+                      ))}
                     </div>
                   </div>
               )}
             </div>
+
 
             {/* Quantity Selector */}
             <div>
@@ -547,7 +587,7 @@ const ProductDetail = () => {
             {/* Action Buttons */}
             <div className="flex gap-4 mt-4">
               <button
-                  className="py-2 px-8  bg-[#f94f4f] text-white text-xl font-semibold rounded-md  hover:bg-[#d93e3e] transition transform hover:scale-105"
+                    className="py-2 px-8  bg-[#f94f4f] text-white text-xl font-semibold rounded-md  hover:bg-[#d93e3e] transition transform hover:scale-105"
               >
                 Mua ngay
               </button>
