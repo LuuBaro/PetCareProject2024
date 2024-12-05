@@ -3,6 +3,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import Header from "../header/Header";
 import Modal from "react-modal";
 import Swal from "sweetalert2";
+import axios from "axios";
 import AddressModal from "./AddressModal";
 import {getProvinces, getDistricts, getWards, addAddress} from '../../service/AddressService';
 
@@ -67,6 +68,15 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     const [isLoadingProvinces, setIsLoadingProvinces] = useState<boolean>(true);
     const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
     const [isLoadingWards, setIsLoadingWards] = useState<boolean>(false);
+
+
+    const [vouchers, setVouchers] = useState([]); // Lưu danh sách voucher
+    const [selectedVoucher, setSelectedVoucher] = useState(null); // Mã voucher được chọn
+    const [isVoucherListOpen, setIsVoucherListOpen] = useState(false); // Trạng thái mở/đóng danh sách voucher
+    const [discountPercent, setDiscountPercent] = useState(0); // Phần trăm giảm giá từ voucher
+    const [discountAmount, setDiscountAmount] = useState(0); // Số tiền được giảm
+    const [finalTotal, setFinalTotal] = useState(total - shippingFee);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -290,6 +300,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
         }
 
         const totalWithShipping = total + shippingFee;
+        const storedVoucher = JSON.parse(localStorage.getItem('selectedVoucher'));
 
         const orderData = {
             products: products.map((productDetail) => ({
@@ -299,11 +310,41 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                 productName: productDetail.productName,
             })),
             shippingCost: shippingFee,
-            total: totalWithShipping,
+            voucherId: selectedVoucher?.voucherId || null,
+            total: finalTotal - shippingFee, // Dòng này đã trừ discountAmount nhưng `totalWithShipping` đã bao gồm phí ship trước đó.
             address: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
             userId: userId,
         };
         console.log("Dữ liệu đơn hàng:", orderData);
+
+        // Trừ số lượng voucher qua API khi đặt hàng
+        if (storedVoucher) {
+            try {
+                const decrementResponse = await fetch(`http://localhost:8080/api/vouchers/${storedVoucher.voucherId}/decrement`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                });
+
+                if (!decrementResponse.ok) {
+                    const errorText = await decrementResponse.text();
+                    throw new Error(`${errorText}`);
+                }
+
+                console.log("Số lượng voucher đã được giảm");
+
+            } catch (error) {
+                console.error("Lỗi khi trừ số lượng voucher:", error.message);
+                Swal.fire({
+                    icon: "error",
+                    title: "Lỗi khi trừ số lượng voucher",
+                    text: error.message,
+                });
+                return;
+            }
+        }
 
         // Xử lý thanh toán COD
         if (selectedPaymentMethod === "cod") {
@@ -333,7 +374,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                     confirmButtonText: "OK",
                 }).then(() => {
                     clearCartAfterCheckout();
-                    navigate("/user");
+                    navigate("/");
                 });
             } catch (error) {
                 console.error("Lỗi khi thanh toán COD:", error.message);
@@ -356,7 +397,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                     },
                     body: JSON.stringify({
                         amount: totalWithShipping,
-                        returnUrl: "http://localhost:5173/user",
+                        returnUrl: "http://localhost:5173/",
                     }),
                 });
 
@@ -438,6 +479,95 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
             alert("Could not save address.");
         }
     };
+
+
+    // Gọi API để lấy danh sách voucher
+    useEffect(() => {
+        fetch('http://localhost:8080/api/vouchers')
+            .then((response) => response.json())
+            .then((data) => setVouchers(data))
+            .catch((error) => console.error('Error fetching vouchers:', error));
+    }, []);
+
+    // Xử lý khi người dùng chọn một voucher
+    const handleVoucherSelect = (voucherId) => {
+        const selected = vouchers.find((voucher) => voucher.voucherId === voucherId);
+        if (selected) {
+            setSelectedVoucher(selected); // Lưu toàn bộ thông tin voucher
+            setDiscountPercent(selected.percents); // Lưu phần trăm giảm giá
+            setIsVoucherListOpen(false); // Đóng danh sách
+        }
+    };
+
+
+// Hàm tính toán và áp dụng mã giảm giá
+    const applyVoucher = () => {
+        if (!selectedVoucher) {
+            Swal.fire({
+                icon: "warning",
+                title: "Chưa chọn mã giảm giá",
+                text: "Vui lòng chọn mã giảm giá để áp dụng.",
+            });
+            return;
+        }
+        // Kiểm tra nếu tổng tiền của hóa đơn <= minPurchaseAmount của voucher
+        if (finalTotal > selectedVoucher.minPurchaseAmount) {
+            Swal.fire({
+                icon: "warning",
+                title: "Không đủ điều kiện",
+                text: `Đơn hàng của bạn không đủ điều kiện để áp dụng mã giảm giá này.`,
+            });
+            return;
+        }
+        const discount = (total + shippingFee) * (selectedVoucher.percents / 100);
+        setDiscountPercent(selectedVoucher.percents);
+        setDiscountAmount(discount);
+        setFinalTotal(total + shippingFee - discount);
+
+        Swal.fire({
+            icon: "success",
+            title: "Mã giảm giá áp dụng thành công",
+            text: `Giảm giá: ${selectedVoucher.percents}% (${formatPrice(discount)})`,
+        });
+        // Lưu voucher đã chọn mà chưa trừ số lượng
+        localStorage.setItem('selectedVoucher', JSON.stringify(selectedVoucher));  // Lưu voucher vào localStorage
+    };
+
+
+// Cập nhật giá trị tổng cộng khi phí vận chuyển hoặc tiền hàng thay đổi
+    useEffect(() => {
+        setFinalTotal(total + shippingFee - discountAmount);
+    }, [total, shippingFee, discountAmount]);
+
+// Hàm bỏ chọn voucher
+    const removeVoucher = () => {
+        setSelectedVoucher(null); // Xóa voucherId
+        setDiscountPercent(0); // Đặt phần trăm giảm giá về 0
+        setDiscountAmount(0); // Đặt số tiền giảm giá về 0
+        setFinalTotal(total + shippingFee); // Cập nhật lại giá trị tổng cộng không giảm giá
+
+        Swal.fire({
+            icon: "info",
+            title: "Voucher đã được bỏ chọn",
+            text: "Đơn hàng sẽ được tính với giá gốc.",
+        });
+    };
+    const getRemainingDays = (startDate, endDate) => {
+        const today = new Date();
+        const start = new Date(startDate);  // Ngày bắt đầu
+        const end = new Date(endDate);      // Ngày kết thúc
+
+        // Kiểm tra nếu ngày hiện tại trước ngày bắt đầu voucher
+        if (today < start) {
+            return -1;  // Trả về -1 nếu voucher chưa bắt đầu, nghĩa là không thể sử dụng
+        }
+
+        const timeDifference = end - today;
+        const daysLeft = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        return daysLeft;
+    };
+
+
 
     return (
         <div>
@@ -701,17 +831,109 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
 
                     {/* Mã giảm giá */}
                     <div className="border-b pb-4 mb-4">
-                    <h3 className="text-lg font-bold text-[#00b7c0] mb-2">Mã Giảm Giá</h3>
+                        <h3 className="text-lg font-bold text-[#00b7c0] mb-2">Mã Giảm Giá</h3>
                         <div className="flex">
-                            <input
-                                type="text"
-                                placeholder="Nhập mã giảm giá"
-                                className="border border-gray-300 rounded-lg p-2 w-full"
-                            />
-                            <button className="bg-[#00b7c0] text-white px-4 rounded-lg ml-2">
+                            <div className="relative w-full">
+                                <input
+                                    type="text"
+                                    value={selectedVoucher ? selectedVoucher.name : ''} // Hiển thị tên voucher nếu đã chọn
+                                    placeholder="Nhập mã giảm giá"
+                                    className="border border-gray-300 rounded-lg p-2 w-full"
+                                    onFocus={() => setIsVoucherListOpen(true)} // Mở danh sách khi người dùng focus vào input
+                                    readOnly // Không cho phép người dùng tự gõ vào trường này
+                                />
+                                {/* Hiển thị danh sách voucher */}
+                                {isVoucherListOpen && (
+                                    <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        {vouchers
+                                            .filter((voucher) => total >= voucher.condition) // Lọc chỉ các voucher thỏa điều kiện
+                                            .map((voucher) => {
+                                                const daysLeft = getRemainingDays(voucher.startDate, voucher.endDate); // Sử dụng startDate và endDate
+                                                const isExpired = daysLeft <= 0;
+                                                const isNotStarted = daysLeft === -1; // Nếu voucher chưa bắt đầu
+
+                                                return (
+                                                    <div
+                                                        key={voucher.voucherId}
+                                                        className={`p-2 cursor-pointer ${isExpired || isNotStarted ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                                                        onClick={() => {
+                                                            if (!isExpired && !isNotStarted) handleVoucherSelect(voucher.voucherId); // Chỉ gọi khi chưa hết hạn và chưa bắt đầu
+                                                        }}
+                                                    >
+                                                        <div className="font-semibold">{voucher.name}</div>
+                                                        <div
+                                                            className="text-sm text-gray-500">Giảm {voucher.percents}%
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">Số lượng còn
+                                                            lại: {voucher.quantity}</div>
+                                                        <div
+                                                            className={`text-xs font-medium ${isExpired ? 'text-red-500' : (isNotStarted ? 'text-yellow-500' : 'text-green-500')}`}
+                                                        >
+                                                            {isExpired
+                                                                ? 'Voucher đã hết hạn'
+                                                                : isNotStarted
+                                                                    ? 'Voucher chưa bắt đầu'
+                                                                    : `${daysLeft} ngày còn lại`}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                        {/* Hiển thị thông báo nếu không có voucher nào thỏa điều kiện */}
+                                        {vouchers.filter((voucher) => total >= voucher.condition).length === 0 && (
+                                            <div className="text-center p-2 text-gray-500">
+                                                Không có voucher nào phù hợp với tổng tiền của bạn.
+                                            </div>
+                                        )}
+
+                                        {/* Thông báo nếu tất cả voucher đều chưa bắt đầu */}
+                                        {vouchers.filter((voucher) => total >= voucher.condition && getRemainingDays(voucher.startDate, voucher.endDate) === -1).length > 0 && (
+                                            <div className="text-center p-2 text-yellow-500">
+                                                Một số voucher chưa tới ngày sử dụng.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+
+                            </div>
+                            <button
+                                className="bg-[#00b7c0] text-white px-10 rounded-lg ml-2 flex-1"
+                                onClick={applyVoucher}
+                            >
                                 Áp dụng
                             </button>
                         </div>
+                        {discountPercent > 0 && (
+                            <div className="mt-2 text-sm text-gray-700 flex justify-between items-center">
+                                <div>
+                                    Giảm giá: <strong>{discountPercent}%</strong> ({formatPrice(discountAmount)})
+                                </div>
+                                <button
+                                    className="flex items-center bg-red-100 text-red-500 hover:bg-red-200 py-2 rounded-lg shadow-sm transition ease-in-out duration-200 px-5"
+                                    onClick={() => {
+                                        removeVoucher(); // Xóa giảm giá
+                                        setSelectedVoucher(''); // Xóa giá trị input
+                                    }}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={1.5}
+                                        stroke="currentColor"
+                                        className="w-5 h-5 mr-1"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                    Bỏ chọn
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Tổng cộng */}
@@ -722,11 +944,17 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                         </div>
                         <div className="flex justify-between items-center mb-4">
                             <span className="font-semibold">Phí vận chuyển</span>
-                            <span>{formatPrice(shippingFee)}</span> {/* Hiển thị phí vận chuyển từ state */}
+                            <span>{formatPrice(shippingFee)}</span>
                         </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between items-center mb-4 text-sm text-green-500">
+                                <span>Giảm giá</span>
+                                <span>-{formatPrice(discountAmount)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center font-bold text-xl text-red-500">
                             <span>Tổng cộng</span>
-                            <span>{formatPrice(total + shippingFee)}</span> {/* Cộng phí vận chuyển vào tổng cộng */}
+                            <span>{formatPrice(finalTotal)}</span>
                         </div>
                         <button
                             onClick={handlePayment}
@@ -735,6 +963,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                             Đặt hàng
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>

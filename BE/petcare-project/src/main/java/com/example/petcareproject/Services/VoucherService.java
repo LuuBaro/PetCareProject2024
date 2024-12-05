@@ -47,4 +47,17 @@ public class VoucherService {
         voucherRepository.delete(voucher);
     }
 
+    // Giảm số lượng voucher
+    public void decrementVoucherQuantity(Long voucherId) {
+        Voucher voucher = voucherRepository.findById(voucherId)
+                .orElseThrow(() -> new RuntimeException("Voucher not found with id " + voucherId));
+
+        if (voucher.getQuantity() <= 0) {
+            throw new RuntimeException("Voucher đã hết số lượng");
+        }
+
+        voucher.setQuantity(voucher.getQuantity() - 1);
+        voucherRepository.save(voucher);
+    }
+
 }

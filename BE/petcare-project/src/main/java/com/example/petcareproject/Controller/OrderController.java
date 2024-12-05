@@ -32,6 +32,7 @@ public class OrderController {
         public double shippingCost;
         public Long userId; // Thêm userId
         public String paymentMethod;
+        public Long voucherId; // Thêm voucherId
     }
 
     @Autowired

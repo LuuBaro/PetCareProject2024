@@ -39,6 +39,10 @@ public class OrderService {
     @Autowired
     private EmailService emailService; // Thêm EmailService vào đây
 
+    @Autowired
+    private VoucherRepository voucherRepository;
+
+
     public void processOrder(OrderController.CheckoutRequest request) {
         // Tìm người dùng theo userId
         Order order = new Order();
@@ -67,6 +71,12 @@ public class OrderService {
         order.setPointEarned(0);
         order.setPointUsed(0);
         order.setUser(user);
+        // Xử lý voucherId
+        if (request.voucherId != null) {
+            Voucher voucher = voucherRepository.findById(request.voucherId)
+                    .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
+            order.setVoucher(voucher);
+        }
 
         // Truy xuất trạng thái từ cơ sở dữ liệu
         StatusOrder defaultStatus = new StatusOrder();
