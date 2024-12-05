@@ -40,7 +40,7 @@ function AccountInfo({
                     <div
                         className="w-36 h-36 bg-gray-200 rounded-full flex items-center justify-center relative border-2 border-blue-400">
                         <img
-                            src={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "default-avatar-url.jpg"}
+                            src={localStorage.getItem(`avatarUrl_${localStorage.getItem("userId")}`) || "https://i.pinimg.com/originals/9f/c2/12/9fc2126eec2c0a3876e3f2097af9b983.gif"}
                             alt="Avatar"
                             className="w-full h-full rounded-full object-cover"
                         />

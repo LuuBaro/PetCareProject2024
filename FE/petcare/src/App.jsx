@@ -21,7 +21,7 @@ import OrderPage from "./components/Manage/OrderPage";
 import { Account } from "./components/user/Account";
 import ForgotPassword from "./components/user/ForgotPassword";
 import VerifyOtp from "./components/user/VerifyOtp.tsx";
-
+import { CartProvider } from "./components/cart/CartContext"; // Đảm bảo CartProvider được import đúng
 function App() {
   const userRole = localStorage.getItem("userRole");
   const currentPath = window.location.pathname;
@@ -37,61 +37,63 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/comingsoon" element={<ComingSoon />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/address" element={<AddressForm />} />
-        <Route path="/user" element={<User />} />
-        <Route path="/payorder" element={<PayOrder />} />
-        <Route path="/orderpage" element={<OrderPage />} />
-        <Route path="/otp-verification" element={<VerifyOtp />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/reset-password" element={<ForgotPassword />} />
+      <CartProvider> {/* Bọc toàn bộ ứng dụng trong CartProvider */}
+        <Router>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/comingsoon" element={<ComingSoon />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/address" element={<AddressForm />} />
+            <Route path="/user" element={<User />} />
+            <Route path="/payorder" element={<PayOrder />} />
+            <Route path="/orderpage" element={<OrderPage />} />
+            <Route path="/otp-verification" element={<VerifyOtp />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/reset-password" element={<ForgotPassword />} />
 
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute>
-              <Cart />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route path="/ProductDetail/by-product/:id" element={<ProductDetail />} /> {/* Ensure this route matches */}
-        <Route
-          path="/manageproduct"
-          element={
-            <ProtectedRoute>
-              <ManageProduct />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manageuser"
-          element={
-            <ProtectedRoute>
-              <ManageUser />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <OrderProvider>
-                <OrderManagementPage />
-              </OrderProvider>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
-  );
+            <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute>
+                    <Cart />
+                  </ProtectedRoute>
+                }
+            />
+
+            <Route path="/ProductDetail/by-product/:id" element={<ProductDetail />} /> {/* Ensure this route matches */}
+            <Route
+                path="/manageproduct"
+                element={
+                  <ProtectedRoute>
+                    <ManageProduct />
+                  </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/manageuser"
+                element={
+                  <ProtectedRoute>
+                    <ManageUser />
+                  </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrderProvider>
+                      <OrderManagementPage />
+                    </OrderProvider>
+                  </ProtectedRoute>
+                }
+            />
+          </Routes>
+        </Router>
+      </CartProvider>
+);
 }
 
 export default App;
