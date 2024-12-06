@@ -13,8 +13,7 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
@@ -391,6 +390,26 @@ public class OrderService {
             System.err.println("Error sending cancellation email: " + e.getMessage());
             // Bạn có thể xử lý lỗi hoặc ghi log tại đây
         }
+    }
+
+    public Double getRevenueBetweenDates(Date startDate, Date endDate) {
+        return orderRepository.calculateRevenueBetweenDates(startDate, endDate);
+    }
+
+    public List<Map<String, Object>> getLast12MonthsRevenue() {
+        List<Object[]> rawResults = orderRepository.findLast12MonthsRevenue();
+
+        // Chuyển đổi Object[] sang Map<String, Object>
+        List<Map<String, Object>> revenues = new ArrayList<>();
+        for (Object[] result : rawResults) {
+            Map<String, Object> revenueData = new HashMap<>();
+            revenueData.put("year", ((Number) result[0]).intValue());
+            revenueData.put("month", ((Number) result[1]).intValue());
+            revenueData.put("totalRevenue", ((Number) result[2]).doubleValue());
+            revenues.add(revenueData);
+        }
+
+        return revenues;
     }
 }
 

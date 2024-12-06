@@ -14,11 +14,14 @@ import com.example.petcareproject.dto.OrderDetailDTO;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -110,8 +113,17 @@ public class OrderController {
         return ResponseEntity.ok("Đơn hàng đã được hủy và email thông báo đã được gửi");
     }
 
+    @GetMapping("/revenue")
+    public ResponseEntity<Double> getRevenue(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
+        Double revenue = orderService.getRevenueBetweenDates(startDate, endDate);
+        return ResponseEntity.ok(revenue);
+    }
 
+    @GetMapping("/revenue/last-12-months")
+    public ResponseEntity<?> getLast12MonthsRevenue() {
+        List<Map<String, Object>> result = orderService.getLast12MonthsRevenue();
+        return ResponseEntity.ok(result);
+    }
 }
-
-
-
