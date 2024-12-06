@@ -4,6 +4,7 @@ const BASE_URL = "http://localhost:8080/api/product-details";
 
 const ProductDetailService = {
   // Create or Update a ProductDetail
+
   createProductDetail: async (productDetail) => {
     try {
       const response = await axios.post(BASE_URL, productDetail);
@@ -20,6 +21,19 @@ const ProductDetailService = {
       return response.data;
     } catch (error) {
       console.error("Error updating product detail:", error);
+      throw error;
+    }
+  },
+
+  updateProductStatus: async (productDetailId, status) => {
+    try {
+      const response = await axios.put(
+          `${BASE_URL}/${productDetailId}/status`,
+          { status }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error toggling product detail status:", error);
       throw error;
     }
   },

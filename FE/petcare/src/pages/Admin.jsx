@@ -5,7 +5,6 @@ import TopBar from "../components/PagesAdmin/TopBar";
 import SidebarMenu from "../components/PagesAdmin/SidebarMenu";
 import ManageProduct from "../components/Manage/ManageProduct";
 import ManageUser from "../components/Manage/ManageUser";// Add this import
-import ClientManagement from "../components/Manage/ManageClient";
 import ManageProductCategories from "../components/Manage/ManageProductCategories";
 import ManageBrand from "../components/Manage/ManageBrand";
 import UserManagement from "../components/Manage/ManageUser";
@@ -31,24 +30,23 @@ function Admin() {
           {/* Main Content adjusts based on the route */}
           <main className="flex-1 p-6 bg-gray-50 overflow-auto">
             <Routes>
-              <Route path="/" element={<MyMain />} />
-              <Route path="/about" element={<ManageUser />} /> {/* Fix the path */}
-              <Route path="/products" element={<ManageProduct />} />
-              <Route path="/product-categories" element={<ManageProductCategories />}
+              <Route path="/admin" element={<MyMain />} />
+              <Route path="/admin/about" element={<ManageUser />} /> {/* Fix the path */}
+              <Route path="/admin/products" element={<ManageProduct />} />
+              <Route path="/admin/product-categories" element={<ManageProductCategories />}
                /> {/* Add this route */}
               {/* Add more routes as needed */}
-              <Route path="/brands" element={<ManageBrand />} /> {/* Add this route */}
-              <Route path="/user" element={<UserManagement />} /> {/* Add this route */}
-              <Route path="/client" element={<ClientManagement />} /> {/* Add this route */}
-              <Route path="/roles" element={<ManageRole />} /> {/* Add this route */}
-              <Route path="/product-details" element={<ProductDetailManager />} /> {/* Add this route */}
-              <Route path="/product-color" element={<ManageProductColors />} /> {/* Add this route */}
-              <Route path="/product-image" element={<ManageProductImages />} /> {/* Add this route */}
-              <Route path="/product-size" element={<ProductSizeManager />} /> {/* Add this route */}
+              <Route path="/admin/brands" element={<ManageBrand />} /> {/* Add this route */}
+              <Route path="/admin/user" element={<UserManagement />} /> {/* Add this route */}
+              <Route path="/admin/roles" element={<ManageRole />} /> {/* Add this route */}
+              <Route path="/admin/product-details" element={<ProductDetailManager />} /> {/* Add this route */}
+              <Route path="/admin/product-color" element={<ManageProductColors />} /> {/* Add this route */}
+              <Route path="/admin/product-image" element={<ManageProductImages />} /> {/* Add this route */}
+              <Route path="/admin/product-size" element={<ProductSizeManager />} /> {/* Add this route */}
 
-              <Route path="/product-weights" element={<ManageWeights />} /> {/* Add this route */}
-              <Route path="/product-inventory" element={<ManageInventory />} /> {/* Add this route */}
-              <Route path="/voucher-management" element={<VoucherManagement/>} />
+              <Route path="/admin/product-weights" element={<ManageWeights />} /> {/* Add this route */}
+              <Route path="/admin/product-inventory" element={<ManageInventory />} /> {/* Add this route */}
+              <Route path="/admin/voucher-management" element={<VoucherManagement/>} />
             </Routes>
           </main>
         </div>

@@ -1,6 +1,7 @@
 package com.example.petcareproject.Controller;
 
 import com.example.petcareproject.Model.ProductDetail;
+import com.example.petcareproject.Repository.ProductDetailRepository;
 import com.example.petcareproject.Services.ProductDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -18,11 +20,20 @@ public class ProductDetailController {
     @Autowired
     private ProductDetailService productDetailService;
 
+    @Autowired
+    private ProductDetailRepository productDetailRepository;
+
     // Create or Update a ProductDetail
+
     @PostMapping
-    public ResponseEntity<ProductDetail> createOrUpdateProductDetail(@RequestBody ProductDetail productDetail) {
-        ProductDetail savedProductDetail = productDetailService.saveOrUpdateProductDetail(productDetail);
-        return new ResponseEntity<>(savedProductDetail, HttpStatus.CREATED);
+    public ProductDetail createProductDetail(@RequestBody ProductDetail productDetail) {
+        return productDetailService.createProductDetail(productDetail);
+    }
+
+
+    @PutMapping("/{productDetailId}")
+    public ProductDetail updateProductDetail(@PathVariable Long productDetailId, @RequestBody ProductDetail updatedProductDetail) {
+        return productDetailService.updateProductDetail(productDetailId, updatedProductDetail);
     }
 
     // Get all ProductDetails
@@ -65,9 +76,22 @@ public class ProductDetailController {
         }
     }
 
+    @PutMapping("/{productDetailId}/status")
+    public ProductDetail updateProductStatus(@PathVariable Long productDetailId, @RequestBody Map<String, Object> payload) {
+        Boolean status = (Boolean) payload.get("status");
 
+        if (status == null) {
+            throw new IllegalArgumentException("Status must be provided.");
+        }
 
+        // Tìm sản phẩm hiện có
+        ProductDetail existingProductDetail = productDetailRepository.findById(productDetailId)
+                .orElseThrow(() -> new RuntimeException("ProductDetail with ID " + productDetailId + " not found."));
 
+        // Cập nhật trạng thái
+        existingProductDetail.setStatus(status);
 
-
+        // Lưu sản phẩm đã cập nhật
+        return productDetailRepository.save(existingProductDetail);
+    }
 }

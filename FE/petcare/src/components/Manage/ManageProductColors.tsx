@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import DataTable from 'react-data-table-component'; // Import the DataTable component
+import DataTable from 'react-data-table-component';
 
 const API_URL = 'http://localhost:8080/api/product-colors';
 
@@ -15,6 +15,7 @@ const ProductColorManager: React.FC = () => {
   const [color, setColor] = useState<string>('');
   const [status, setStatus] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);  // Store error message
 
   useEffect(() => {
     fetchProductColors();
@@ -29,8 +30,25 @@ const ProductColorManager: React.FC = () => {
     }
   };
 
+  // Input validation function
+  const validateInput = (input: string): string | null => {
+    if (!input.trim()) {
+      return 'Màu sắc không được để trống.';
+    }
+    if (/[^a-zA-Z\s]/.test(input)) {
+      return 'Màu sắc chỉ được chứa chữ cái và khoảng trắng.';
+    }
+    return null;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errorMessage = validateInput(color);
+    if (errorMessage) {
+      setFormError(errorMessage);
+      return;
+    }
+
     const newProductColor = { color, status };
 
     try {
@@ -54,6 +72,12 @@ const ProductColorManager: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId === null) return;
+
+    const errorMessage = validateInput(color);
+    if (errorMessage) {
+      setFormError(errorMessage);
+      return;
+    }
 
     const updatedProductColor = { color, status };
 
@@ -80,6 +104,7 @@ const ProductColorManager: React.FC = () => {
     setColor('');
     setStatus(true);
     setEditingId(null);
+    setFormError(null); // Reset the error message when the form is reset
   };
 
   // Define columns for DataTable
@@ -134,6 +159,7 @@ const ProductColorManager: React.FC = () => {
                   onChange={(e) => setColor(e.target.value)}
                   className="p-3 border border-gray-300 rounded-lg w-full md:w-2/3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {formError && <div className="text-red-500">{formError}</div>} {/* Show the error message */}
               <select
                   value={status.toString()}
                   onChange={(e) => setStatus(e.target.value === 'true')}
@@ -171,13 +197,6 @@ const ProductColorManager: React.FC = () => {
             highlightOnHover
             striped
             responsive
-            customStyles={{
-              headRow: {
-                style: {
-                  backgroundColor: '#f4f4f4',
-                },
-              },
-            }}
         />
       </div>
   );

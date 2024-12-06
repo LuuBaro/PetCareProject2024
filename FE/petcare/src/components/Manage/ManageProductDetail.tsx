@@ -1,386 +1,438 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import ProductDetailService from "../../service/ProductDetailService";
 import ProductService from "../../service/ProductService";
-import ProductColorService from "../../service/ProductColorsService.js";
-import ProductSizeService from "../../service/ProductSizesService.js";
-import ProductWeightService from "../../service/ProductWeightsService.js";
+import ProductColorService from "../../service/ProductColorsService";
+import ProductSizeService from "../../service/ProductSizesService";
+import ProductWeightService from "../../service/ProductWeightsService";
+import DataTable from "react-data-table-component";
+import {MdEdit, MdLoop, MdAdd} from "react-icons/md";
+import Swal from "sweetalert2";
+interface Product {
+    productId: string;
+    productName: string;
+    status: boolean;
+}
+
+interface FormData {
+    productId: string;
+    quantity: number;
+    price: number;
+    productColorId: string;
+    productSizeId: string;
+    productWeightId: string;
+    status: boolean;
+}
 
 const ProductDetailManager = () => {
-  const [productDetails, setProductDetails] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [colors, setColors] = useState([]);
-  const [weightsList, setWeights] = useState([]);  // Renamed for clarity
-  const [sizes, setSizes] = useState([]);
-  const [formData, setFormData] = useState({
-    productId: "",
-    quantity: 0,
-    price: 0,
-    productColorId: "",
-    productSizeId: "",
-    productWeightId: "",  // Make sure this is set correctly
-    status: true, // Default status as true (Active)
-  });
-  const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [modalOpen, setModalOpen] = useState(false); // Control modal visibility
-
-  useEffect(() => {
-    loadProductDetails();
-    loadProducts();
-    loadColors();
-    loadSizes();
-    loadWeights();  // Ensure this function is called to load weights
-  }, []);
-
-  const loadProductDetails = async () => {
-    setLoading(true);
-    setErrorMessage("");
-    try {
-      const response = await ProductDetailService.getAllProductDetails();
-      setProductDetails(response);
-    } catch (error) {
-      console.error("Error loading product details", error);
-      setErrorMessage("Không thể tải thông tin chi tiết sản phẩm.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProducts = async () => {
-    setErrorMessage("");
-    try {
-      const response = await ProductService.getAllProducts();
-      setProducts(response.data);
-    } catch (error) {
-      console.error("Error loading products", error);
-      setErrorMessage("Không thể tải danh sách sản phẩm.");
-    }
-  };
-
-  const loadColors = async () => {
-    setErrorMessage("");
-    try {
-      const response = await ProductColorService.getAllProductColors();
-      const activeColors = response.filter((color) => color.status === true); // Filter active colors
-      setColors(activeColors);
-    } catch (error) {
-      console.error("Error loading colors", error);
-      setErrorMessage("Không thể tải danh sách màu.");
-    }
-  };
-
-  const loadSizes = async () => {
-    setErrorMessage("");
-    try {
-      const response = await ProductSizeService.getAllProductSizes();
-      const activeSizes = response.filter((size) => size.status === true); // Filter active sizes
-      setSizes(activeSizes);
-    } catch (error) {
-      console.error("Error loading sizes", error);
-      setErrorMessage("Không thể tải danh sách size");
-    }
-  };
-
-  const loadWeights = async () => {
-    setErrorMessage("");
-    try {
-      const response = await ProductWeightService.getAllProductWeights();
-      const activeWeight = response.filter((weight) => weight.status === true);  // Renamed for clarity
-      setWeights(activeWeight);
-    } catch (error) {
-      console.error("Error loading weights", error);
-      setErrorMessage("Không thể tải danh sách weight");
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleStatusChange = (e) => {
-    setFormData({ ...formData, status: e.target.checked }); // Toggle status
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMessage("");
-    try {
-      if (editMode) {
-        await ProductDetailService.updateProductDetail(editId, {
-          product: { productId: formData.productId },
-          quantity: formData.quantity,
-          price: formData.price,
-          productColor: { productColorId: formData.productColorId },
-          productSize: { productSizeId: formData.productSizeId },
-          productWeight: { productWeightId: formData.productWeightId },
-          status: formData.status, // Include status as boolean
-        });
-        setEditMode(false);
-      } else {
-        await ProductDetailService.createProductDetail({
-          product: { productId: formData.productId },
-          quantity: formData.quantity,
-          price: formData.price,
-          productColor: { productColorId: formData.productColorId },
-          productSize: { productSizeId: formData.productSizeId },
-          productWeight: { productWeightId: formData.productWeightId },
-          status: formData.status, // Include status as boolean
-        });
-      }
-      setFormData({
+    const [productDetails, setProductDetails] = useState([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [colors, setColors] = useState([]);
+    const [weightsList, setWeights] = useState([]);
+    const [sizes, setSizes] = useState([]);
+    const [formData, setFormData] = useState<FormData>({
         productId: "",
         quantity: 0,
         price: 0,
         productColorId: "",
         productSizeId: "",
-        productWeightId: "", // Reset productWeightId
-        status: true, // Reset to default status
-      });
-      loadProductDetails();
-      setModalOpen(false); // Close modal after submission
-    } catch (error) {
-      console.error("Error saving product detail", error);
-      setErrorMessage("Có lỗi khi lưu thông tin chi tiết sản phẩm.");
-    }
-    setLoading(false);
-  };
-
-  const handleEdit = (detail) => {
-    setFormData({
-      productId: detail.product?.productId || "",
-      quantity: detail.quantity || 0,
-      price: detail.price || 0,
-      productColorId: detail.productColor?.productColorId || "",
-      productSizeId: detail.productSize?.productSizeId || "",
-      productWeightId: detail.productWeight?.productWeightId || "", // Ensure weight is correctly loaded
-      status: detail.status || true, // Get status as boolean
+        productWeightId: "",
+        status: true,
     });
-    setEditId(detail.productDetailId);
-    setEditMode(true);
-    setModalOpen(true); // Open modal for editing
-  };
+    const [loading, setLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const [formErrors, setFormErrors] = useState({});
+    const [modalOpen, setModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa thông tin chi tiết sản phẩm này không?")) {
-      try {
-        await ProductDetailService.deleteProductDetail(id);
+    useEffect(() => {
         loadProductDetails();
-      } catch (error) {
-        console.error("Error deleting product detail", error);
-        setErrorMessage("Có lỗi khi xóa thông tin chi tiết sản phẩm.");
-      }
-    }
-  };
+        loadProducts();
+        loadColors();
+        loadSizes();
+        loadWeights();
+    }, []);
 
-  return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Product Detail Manager</h1>
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+    const loadProductDetails = async () => {
+        setLoading(true);
+        try {
+            const response = await ProductDetailService.getAllProductDetails();
+            setProductDetails(response);
+        } catch (error) {
+            console.error("Error loading product details", error);
+            Swal.fire("Lỗi", "Không thể tải thông tin chi tiết sản phẩm.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        {/* Add Product Button */}
-        <button
-            onClick={() => setModalOpen(true)}  // Open modal when button is clicked
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4 hover:bg-blue-600"
-        >
-          Thêm chi tiết sản phẩm
-        </button>
+    const loadProducts = async () => {
+        try {
+            const response: { data: Product[] } = await ProductService.getAllProducts();
+            setProducts(response.data);
+            const activeProducts = response.data.filter((product) => product.status); // Filter out inactive products
+            setProducts(activeProducts);
+        } catch (error) {
+            console.error("Error loading products", error);
+            Swal.fire("Lỗi", "Không thể tải danh sách sản phẩm.", "error");
+        }
+    };
 
-        {/* Modal */}
-        {modalOpen && (
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-2/3">
-                <h2 className="text-xl font-semibold mb-4">{editMode ? "Cập nhật chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}</h2>
+    const validateForm = () => {
+        const errors = {};
+        if (!formData.productId) errors.productId = "Vui lòng chọn sản phẩm.";
+        if (formData.quantity <= 0) errors.quantity = "Số lượng phải lớn hơn 0.";
+        if (formData.price <= 0) errors.price = "Giá phải lớn hơn 0.";
+        if (!formData.productColorId) errors.productColorId = "Vui lòng chọn màu sắc.";
+        if (!formData.productSizeId) errors.productSizeId = "Vui lòng chọn size.";
+        if (!formData.productWeightId) errors.productWeightId = "Vui lòng chọn trọng lượng.";
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Form Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* Product */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Sản phẩm</label>
-                      <select
-                          name="productId"
-                          value={formData.productId}
-                          onChange={handleInputChange}
-                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          required
-                      >
-                        <option value="">Chọn sản phẩm</option>
-                        {products.map((product) => (
-                            <option key={product.productId} value={product.productId}>
-                              {product.productName}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
+    const loadColors = async () => {
+        try {
+            const response = await ProductColorService.getAllProductColors();
+            setColors(response.filter((color) => color.status));
+        } catch (error) {
+            console.error("Error loading colors", error);
+        }
+    };
 
-                    {/* Color */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Màu sắc</label>
-                      <select
-                          name="productColorId"
-                          value={formData.productColorId}
-                          onChange={handleInputChange}
-                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          required
-                      >
-                        <option value="">Chọn màu sắc</option>
-                        {colors.map((color) => (
-                            <option key={color.productColorId} value={color.productColorId}>
-                              {color.color}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
+    const loadSizes = async () => {
+        try {
+            const response = await ProductSizeService.getAllProductSizes();
+            setSizes(response.filter((size) => size.status));
+        } catch (error) {
+            console.error("Error loading sizes", error);
+        }
+    };
 
-                    {/* Size */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Size</label>
-                      <select
-                          name="productSizeId"
-                          value={formData.productSizeId}
-                          onChange={handleInputChange}
-                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          required
-                      >
-                        <option value="">Chọn kích thước</option>
-                        {sizes.map((size) => (
-                            <option key={size.productSizeId} value={size.productSizeId}>
-                              {size.productSize}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
+    const loadWeights = async () => {
+        try {
+            const response = await ProductWeightService.getAllProductWeights();
+            setWeights(response.filter((weight) => weight.status));
+        } catch (error) {
+            console.error("Error loading weights", error);
+        }
+    };
 
-                    {/* Weight */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Trọng lượng</label>
-                      <select
-                          name="productWeightId"
-                          value={formData.productWeightId}
-                          onChange={handleInputChange}
-                          className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          required
-                      >
-                        <option value="">Chọn trọng lượng</option>
-                        {weightsList.map((weight) => (
-                            <option key={weight.productWeightId} value={weight.productWeightId}>
-                              {weight.weightValue}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+    const handleInputChange = (e) => {
+        const {name, value} = e.target;
+        setFormData({...formData, [name]: value});
+    };
 
-                  {/* Quantity */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Số lượng</label>
-                    <input
-                        type="number"
-                        name="quantity"
-                        value={formData.quantity}
-                        onChange={handleInputChange}
-                        className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                  </div>
+    const handleStatusChange = (e) => {
+        setFormData({...formData, status: e.target.checked});
+    };
 
-                  {/* Price */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Giá</label>
-                    <input
-                        type="number"
-                        name="price"
-                        value={formData.price}
-                        onChange={handleInputChange}
-                        className="block w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                  </div>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!validateForm()) return;
 
-                  {/* Status */}
-                  <div className="flex items-center">
-                    <input
-                        type="checkbox"
-                        name="status"
-                        checked={formData.status}
-                        onChange={handleStatusChange}
-                        className="mr-2"
-                    />
-                    <span className="text-sm">Active</span>
-                  </div>
+        setLoading(true);
+        try {
+            if (editMode) {
+                await ProductDetailService.updateProductDetail(editId, {
+                    product: {productId: formData.productId},
+                    quantity: formData.quantity,
+                    price: formData.price,
+                    productColor: {productColorId: formData.productColorId},
+                    productSize: {productSizeId: formData.productSizeId},
+                    productWeight: {productWeightId: formData.productWeightId},
+                    status: formData.status,
+                });
+                Swal.fire("Thành công", "Sản phẩm đã được cập nhật!", "success");
+                setEditMode(false);
+            } else {
+                await ProductDetailService.createProductDetail({
+                    product: {productId: formData.productId},
+                    quantity: formData.quantity,
+                    price: formData.price,
+                    productColor: {productColorId: formData.productColorId},
+                    productSize: {productSizeId: formData.productSizeId},
+                    productWeight: {productWeightId: formData.productWeightId},
+                    status: formData.status,
+                });
+                Swal.fire("Thành công", "Sản phẩm đã được thêm mới!", "success");
+            }
+            setFormData({
+                productId: "",
+                quantity: 0,
+                price: 0,
+                productColorId: "",
+                productSizeId: "",
+                productWeightId: "",
+                status: true,
+            });
+            loadProductDetails();
+            setModalOpen(false);
+        } catch (error) {
+            console.error("Error saving product detail", error);
+            Swal.fire("Lỗi", "Có lỗi khi lưu thông tin chi tiết sản phẩm.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                  <div className="flex justify-between mt-4">
-                    <button
-                        type="button"
-                        onClick={() => setModalOpen(false)}  // Close modal
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+    const handleEdit = (detail) => {
+        setFormData({
+            productId: detail.product?.productId || "",
+            quantity: detail.quantity || 0,
+            price: detail.price || 0,
+            productColorId: detail.productColor?.productColorId || "",
+            productSizeId: detail.productSize?.productSizeId || "",
+            productWeightId: detail.productWeight?.productWeightId || "",
+            status: detail.status || true,
+        });
+        setEditId(detail.productDetailId);
+        setEditMode(true);
+        setModalOpen(true);
+    };
+
+    const handleCancel = () => {
+        setFormData({
+            productId: "",
+            quantity: 0,
+            price: 0,
+            productColorId: "",
+            productSizeId: "",
+            productWeightId: "",
+            status: true,
+        });
+        setEditMode(false);
+        setEditId(null);
+        setModalOpen(false);
+    };
+
+    const handleToggleStatus = async (productDetailId, currentStatus) => {
+        try {
+            const updatedProductDetail = {status: !currentStatus}; // Đảo trạng thái
+            await ProductDetailService.updateProductDetail(productDetailId, updatedProductDetail);
+            Swal.fire("Thành công", "Trạng thái sản phẩm đã được cập nhật!", "success");
+            loadProductDetails(); // Tải lại danh sách sản phẩm
+        } catch (error) {
+            console.error("Error toggling status:", error);
+            Swal.fire("Lỗi", "Không thể cập nhật trạng thái sản phẩm.", "error");
+        }
+    };
+
+    const columns = [
+        {name: "Sản phẩm", selector: (row) => row.product?.productName, sortable: true, grow: 3},
+        {name: "Màu sắc", selector: (row) => row.productColor?.color, sortable: true, grow: 0.2, center: true},
+        {name: "Size", selector: (row) => row.productSize?.productSize, sortable: true, grow: 0.2, center: true},
+        {
+            name: "Trọng lượng",
+            selector: (row) => row.productWeight?.weightValue,
+            sortable: true,
+            grow: 0.9,
+            center: true
+        },
+        {name: "Số lượng", selector: (row) => row.quantity, sortable: true, grow: 0.2, center: true},
+        {name: "Giá", selector: (row) => row.price, sortable: true, grow: 0.2, center: true},
+        {
+            name: "Trạng thái",
+            selector: (row) => (row.status ? "Hoạt động" : "Không hoạt động"),
+            cell: (row) => (
+                <div className="flex items-center justify-center">
+                    <span
+                        className={`px-3 py-1 rounded text-sm font-semibold ${
+                            row.status ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                        }`}
                     >
-                      Hủy
-                    </button>
+                {row.status ? "Hoạt động" : "Không hoạt động"}
+            </span>
                     <button
-                        type="submit"
-                        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                        onClick={() => handleToggleStatus(row.productDetailId, row.status)}
+                        className="ml-3 p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+                        title="Chuyển đổi trạng thái"
                     >
-                      {editMode ? "Cập nhật" : "Thêm"}
+                        <MdLoop size={20} className="text-blue-500 hover:text-blue-700 transition-transform transform hover:rotate-180" />
                     </button>
-                  </div>
-                </form>
-              </div>
+                </div>
+            ),
+            sortable: true,
+            grow: 2,
+            center: true,
+        },
+        {
+            name: "Hành động",
+            cell: (row) => (
+                <div className="flex gap-2">
+                    <button onClick={() => handleEdit(row)} title="Edit">
+                        <MdEdit size={18} className="text-blue-600 hover:text-blue-800"/>
+                    </button>
+                </div>
+            ), center: true
+        },
+    ];
+
+    return (
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Quản lý chi tiết sản phẩm</h1>
+            <div className="flex justify-between items-center mb-4">
+                <input
+                    type="text"
+                    placeholder="Tìm kiếm sản phẩm..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="p-2 border border-gray-300 rounded w-1/3"
+                />
+                <button
+                    onClick={() => setModalOpen(true)}
+                    className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                >
+                    <MdAdd className="mr-2"/>
+                    Thêm sản phẩm
+                </button>
             </div>
-        )}
+            <DataTable
+                columns={columns}
+                data={productDetails.filter((detail) =>
+                    detail.product?.productName.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
+                pagination
+                highlightOnHover
+                className="border rounded-lg"
+            />
+            {modalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75">
+                    <div className="bg-white p-6 rounded-lg w-1/2">
+                        <h2 className="text-xl font-bold mb-4">{editMode ? "Sửa chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}</h2>
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-4">
+                                <label className="block mb-2">Sản phẩm</label>
+                                <select
+                                    name="productId"
+                                    value={formData.productId}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                >
+                                    <option value="">Chọn sản phẩm</option>
+                                    {products
+                                        .filter((product) => product.status) // Only show active products
+                                        .map((product) => (
+                                            <option key={product.productId} value={product.productId}>
+                                                {product.productName}
+                                            </option>
+                                        ))}
+                                </select>
+                                {formErrors.productId && <p className="text-red-500 text-sm">{formErrors.productId}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block mb-2">Số lượng</label>
+                                <input
+                                    type="number"
+                                    name="quantity" // Correct name
+                                    value={formData.quantity}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                />
+                                {formErrors.quantity && <p className="text-red-500 text-sm">{formErrors.quantity}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block mb-2">Giá</label>
+                                <input
+                                    type="number"
+                                    name="price" // Correct name
+                                    value={formData.price}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                />
+                                {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block mb-2">Màu sắc</label>
+                                <select
+                                    name="productColorId" // Correct name
+                                    value={formData.productColorId}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                >
+                                    <option value="">Chọn màu sắc</option>
+                                    {colors.map((color) => (
+                                        <option key={color.productColorId} value={color.productColorId}>
+                                            {color.color}
+                                        </option>
+                                    ))}
+                                </select>
+                                {formErrors.productColorId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productColorId}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block mb-2">Size</label>
+                                <select
+                                    name="productSizeId" // Correct name
+                                    value={formData.productSizeId}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                >
+                                    <option value="">Chọn size</option>
+                                    {sizes.map((size) => (
+                                        <option key={size.productSizeId} value={size.productSizeId}>
+                                            {size.productSize}
+                                        </option>
+                                    ))}
+                                </select>
+                                {formErrors.productSizeId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productSizeId}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block mb-2">Trọng lượng</label>
+                                <select
+                                    name="productWeightId" // Correct name
+                                    value={formData.productWeightId}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                >
+                                    <option value="">Chọn trọng lượng</option>
+                                    {weightsList.map((weight) => (
+                                        <option key={weight.productWeightId} value={weight.productWeightId}>
+                                            {weight.weightValue}
+                                        </option>
+                                    ))}
+                                </select>
+                                {formErrors.productWeightId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productWeightId}</p>}
+                            </div>
+                            <div className="flex items-center mb-4">
+                                <input
+                                    type="checkbox"
+                                    name="status" // Correct name
+                                    checked={formData.status}
+                                    onChange={handleStatusChange}
+                                    className="mr-2"
+                                />
+                                <label>Trạng thái (Active)</label>
+                            </div>
 
-        {/* Display Product Details */}
-        <table className="min-w-full border-collapse mt-6 bg-white shadow-md rounded-lg overflow-hidden">
-          <thead>
-          <tr className="bg-gray-100 text-gray-700">
-            <th className="py-3 px-6 text-left border-b">Sản phẩm</th>
-            <th className="py-3 px-6 text-left border-b">Màu sắc</th>
-            <th className="py-3 px-6 text-left border-b">Size</th>
-            <th className="py-3 px-6 text-left border-b">Trọng lượng</th>
-            <th className="py-3 px-6 text-left border-b">Số lượng</th>
-            <th className="py-3 px-6 text-left border-b">Giá</th>
-            <th className="py-3 px-6 text-left border-b">Trạng thái</th>
-            <th className="py-3 px-6 text-left border-b">Hành động</th>
-          </tr>
-          </thead>
-          <tbody>
-          {productDetails.map((detail, index) => (
-              <tr
-                  key={detail.productDetailId}
-                  className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
-              >
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.product?.productName}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.productColor?.color}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.productSize?.productSize}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.productWeight?.weightValue}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.quantity}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.price}</td>
-                <td className="py-3 px-6 text-sm text-gray-800">{detail.status ? "Active" : "Inactive"}</td>
-                <td className="py-3 px-6 text-sm text-gray-800 flex gap-2">
-                  <button
-                      onClick={() => handleEdit(detail)}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                      onClick={() => handleDelete(detail.productDetailId)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-          ))}
-          </tbody>
-        </table>
-
-      </div>
-  );
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={handleCancel}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                                >
+                                    Đóng
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                                >
+                                    {editMode ? "Lưu thay đổi" : "Thêm mới"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default ProductDetailManager;
