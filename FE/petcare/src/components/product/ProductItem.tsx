@@ -6,6 +6,7 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 export default function ProductItem({
                                         name,
                                         price,
+                                        status,
                                         image,
                                         rating,
                                         isFavorite,

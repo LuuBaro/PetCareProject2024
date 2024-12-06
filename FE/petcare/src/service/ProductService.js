@@ -23,7 +23,8 @@ class ProductService {
       description: product.description,
       imageUrl: product.imageUrl,
       category: product.category,
-      brand: product.brand
+      brand: product.brand,
+      status: product.status
     });
   }
 
@@ -35,7 +36,8 @@ class ProductService {
       description: product.description,
       imageUrl: product.imageUrl,
       category: product.category,
-      brand: product.brand
+      brand: product.brand,
+      status: product.status
     });
   }
 

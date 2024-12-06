@@ -35,6 +35,9 @@ export default function Products() {
         window.scrollTo({top: 0, behavior: "smooth"});
     };
 
+
+
+
     // Lấy userId từ localStorage
     useEffect(() => {
         const storedUserId = localStorage.getItem("userId");
@@ -44,11 +47,13 @@ export default function Products() {
     }, []);
 
     // Lấy dữ liệu sản phẩm từ API
+    // Lấy dữ liệu sản phẩm từ API
     useEffect(() => {
+        let intervalId;
+
         const fetchProducts = async () => {
             try {
                 const response = await ProductService.getAllProducts();
-
                 const response2 = await axios.get('http://localhost:8080/api/product-details');
 
                 if (!Array.isArray(response.data) || response.data.length === 0) {
@@ -63,16 +68,16 @@ export default function Products() {
 
                 const productDetails = response2.data.map((productDetail) => ({
                     productDetailId: productDetail.productDetailId,
-                    productId: productDetail.product.productId,  // Đảm bảo lấy đúng productId
+                    productId: productDetail.product.productId, // Đảm bảo lấy đúng productId
                     price: productDetail.price,
                     color: productDetail.productColor?.color || 'Không có màu',
                     weight: productDetail.productWeight?.weightValue || 'Không có trọng lượng',
                     size: productDetail.productSize?.productSize || 'Không có kích cỡ',
                 }));
 
+                const activeProducts = response.data.filter(product => product.status === true);
 
-                // Kết hợp sản phẩm và chi tiết sản phẩm
-                const formattedProducts = response.data.map((product) => {
+                const formattedProducts = activeProducts.map((product) => {
                     const detail = productDetails.find(detail => detail.productId === product.productId);
 
                     if (!detail) {
@@ -90,7 +95,6 @@ export default function Products() {
                         category: product.category?.categogyName || "Khác",
                     };
                 });
-
 
                 setProducts(formattedProducts.reverse());
                 setFilteredProducts(formattedProducts.reverse());
@@ -110,9 +114,19 @@ export default function Products() {
             }
         };
 
-        fetchProducts();
-        fetchFavorites();
+        const fetchData = () => {
+            fetchProducts();
+            fetchFavorites();
+        };
+
+        // Gọi fetchData mỗi 1 giây
+        intervalId = setInterval(fetchData, 1000);
+
+        // Cleanup interval khi component unmount
+        return () => clearInterval(intervalId);
     }, [userId]);
+
+
 
     // Lọc sản phẩm theo danh mục, thương hiệu và giá
     const applyFilters = () => {
