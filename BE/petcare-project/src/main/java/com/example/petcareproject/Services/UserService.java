@@ -59,7 +59,8 @@ public class UserService implements UserDetailsService {
     }
 
     public void saveUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword())); // Mã hóa mật khẩu trước khi lưu
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setStatus(true); // Đặt trạng thái mặc định là true khi tạo// Mã hóa mật khẩu trước khi lưu
         userRepository.save(user);
 
         // Gán vai trò mặc định "Người dùng" nếu không có vai trò nào được chỉ định
@@ -82,6 +83,10 @@ public class UserService implements UserDetailsService {
             // Update user data
             user.setFullName(updateUserRequest.getFullName());
             user.setPhone(updateUserRequest.getPhone());
+            user.setEmail(updateUserRequest.getEmail());
+            user.setStatus(updateUserRequest.isStatus());
+            user.setImageUrl(updateUserRequest.getImageUrl());
+
 
             // Save the updated user to the database
             return userRepository.save(user);
@@ -109,7 +114,9 @@ public class UserService implements UserDetailsService {
 
 
     public List<User> getAllUsers() {
-        return userRepository.findAll(); // Lấy tất cả người dùng
+        List<User> users = userRepository.findAll();
+        users.forEach(user -> System.out.println("User: " + user.getFullName() + ", Status: " + user.isStatus()));
+        return users;
     }
 
     public void delete(User user) {

@@ -21,6 +21,8 @@ public class User {
     private String phone;
     private Date registrationDate;
     private double totalSpent;
+    private boolean isStatus;
+    private String imageUrl;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -30,11 +32,10 @@ public class User {
     )
     private Set<Role> userRoles; // Hoặc List<Role>
 
-    // Constructor mặc định (để JPA có thể sử dụng)
+
     public User() {
     }
 
-    // Constructor mới cho việc tạo người dùng từ Facebook
     public User(String email, String fullName) {
         this.email = email;
         this.fullName = fullName;

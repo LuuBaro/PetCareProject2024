@@ -1,29 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import UserService from '../../service/UserService';
-import RoleService from '../../service/RoleService';
+import React, { useEffect, useState } from "react";
+import UserService from "../../service/UserService";
+import RoleService from "../../service/RoleService";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { storage } from "../../config/firebaseConfig";
+import { useForm } from "react-hook-form";
+import { Password } from "@mui/icons-material";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [formMode, setFormMode] = useState('add');
+  const [message, setMessage] = useState("");
+  const [formMode, setFormMode] = useState("add");
   const [userToEdit, setUserToEdit] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
-  const [activeTab, setActiveTab] = useState('users');
-  const [searchTerm, setSearchTerm] = useState('');
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [file, setFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [usersPerPage] = useState(10);
+  const [isStatus, setStatus] = useState(true);
+  const [activeTab, setActiveTab] = useState("active");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [errors, setErrors] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    totalSpent: '',
-    password: '',
-    roles: '',
-  });
+  const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm();
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRoles();
+  }, []);
+
+  const handleEdit = (user) => {
+    setUserToEdit(user);
+    setFormMode("edit");
+    setSelectedRoles(user.userRoles.map((role) => role.roleId));
+    setStatus(user.status);
+    setIsModalOpen(true);
+    reset({
+      fullName: user.fullName,
+      password: user.password,
+      email: user.email,
+      phone: user.phone,
+    });
+  };
+  
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -31,8 +50,7 @@ const UserManagement = () => {
       const userList = await UserService.getAllUsers();
       setUsers(userList);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      setMessage('Error fetching users.');
+      setMessage("Lỗi khi lấy danh sách người dùng.");
     } finally {
       setLoading(false);
     }
@@ -43,84 +61,89 @@ const UserManagement = () => {
       const roleList = await RoleService.getAllRoles();
       setRoles(roleList);
     } catch (error) {
-      console.error('Error fetching roles:', error);
-      setMessage('Error fetching roles.');
+      setMessage("Lỗi khi lấy danh sách vai trò.");
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles();
-  }, []);
-
-  const handleEdit = (user) => {
-    setUserToEdit(user);
-    setFormMode('edit');
-    setSelectedRoles(user.userRoles.map(userRole => userRole.roleId));
+  const handleOpenModal = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
-  const handleUserSubmit = async (e) => {
-    e.preventDefault();
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
+  const isDuplicateUser = (data) => {
+    return users.some(user => 
+      (user.email === data.email && user.userId !== (userToEdit?.userId || null)) ||
+      (user.phone === data.phone && user.userId !== (userToEdit?.userId || null))
+    );
+  };
+
+  const handleUserSubmit = async (data) => {
     const userData = {
-      fullName: e.target.fullName.value,
-      email: e.target.email.value,
-      phone: e.target.phone.value,
-      totalSpent: Number(e.target.totalSpent.value),
-      password: formMode === 'add' ? e.target.password.value : undefined,
-      userRoles: selectedRoles.map(roleId => ({ roleId })),
-      registrationDate: formMode === 'edit' ? userToEdit.registrationDate : new Date().toISOString(),
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      totalSpent: userToEdit?.totalSpent || 0,
+      password: data.password || userToEdit?.password, // Giữ nguyên mật khẩu cũ nếu trường password rỗng
+      userRoles: selectedRoles.map((roleId) => ({ roleId })),
+      registrationDate: formMode === "edit" ? userToEdit.registrationDate : new Date().toISOString(),
+      // imageUrl: userToEdit?.imageUrl || null,
+      status: isStatus,
     };
+    await submitUserData(userData);
+  
+    // if (file) {
+    //   const fileRef = ref(storage, `user_images/${file.name}`);
+    //   const uploadTask = uploadBytesResumable(fileRef, file);
+  
+    //   uploadTask.on(
+    //     "state_changed",
+    //     null,
+    //     (error) => {
+    //       setMessage("Lỗi khi tải ảnh lên.");
+    //     },
+    //     async () => {
+    //       try {
+    //         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    //         userData.imageUrl = downloadURL;
+    //         await submitUserData(userData);
+    //       } catch (err) {
+    //         setMessage("Lỗi khi hoàn tất tải lên.");
+    //       }
+    //     }
+    //   );
+    // } else {
+    //   await submitUserData(userData);
+    // }
+  };
 
-    if (validateForm(userData)) {
-      try {
-        const existingUser = users.find(user => user.email === userData.email || user.phone === userData.phone);
-
-        if (existingUser && existingUser.userId !== userToEdit?.userId) {
-          setErrors(prevErrors => ({
-            ...prevErrors,
-            email: 'Email đã tồn tại.',
-            phone: 'Số điện thoại đã tồn tại.',
-          }));
-          return;
-        }
-
-        if (formMode === 'edit') {
-          await UserService.updateUser(userToEdit.userId, userData);
-          setMessage('Người dùng đã được cập nhật thành công.');
-        } else {
-          await UserService.createUser(userData);
-          setMessage('Người dùng đã được thêm thành công.');
-        }
-        fetchUsers();
-        resetForm();
-      } catch (error) {
-        console.error('Error saving user:', error);
-        setMessage('Error saving user.');
+  const submitUserData = async (userData) => {
+    try {
+      if (formMode === "edit") {
+        await UserService.updateUser(userToEdit.userId, userData);
+        setMessage("Cập nhật người dùng thành công.");
+      } else {
+        await UserService.createUser(userData);
+        setMessage("Thêm người dùng thành công.");
       }
+      await fetchUsers();
+      handleCloseModal();
+    } catch (error) {
+      setMessage("Lỗi khi lưu người dùng.");
     }
   };
 
   const handleDelete = async (userId) => {
-    const user = users.find(user => user.userId === userId);
-    const isAdmin = user.userRoles.some(userRole => {
-      const role = roles.find(role => role.roleId === userRole.roleId);
-      return role && role.roleName === 'Admin';
-    });
-
-    if (isAdmin) {
-      alert('Không thể xóa người dùng có chức vụ là Admin.');
-      return;
-    }
-
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này không?")) {
       try {
         await UserService.deleteUser(userId);
         fetchUsers();
-        setMessage('Người dùng đã được xóa thành công.');
+        setMessage("Xóa người dùng thành công.");
       } catch (error) {
-        console.error('Error deleting user:', error);
-        setMessage('Error deleting user.');
+        setMessage("Lỗi khi xóa người dùng.");
       }
     }
   };
@@ -137,193 +160,309 @@ const UserManagement = () => {
   };
 
   const resetForm = () => {
+    reset({
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      roles: [],
+    });
+
     setUserToEdit(null);
-    setFormMode('add');
-    setSelectedRoles([]);
-    setErrors({ fullName: '', email: '', phone: '', totalSpent: '', password: '', roles: '' });
-    setMessage('');
-    setSearchTerm('');
-    document.getElementById("userForm").reset();
+    setFormMode("add");
+    setSelectedRoles([]); // If you're using checkboxes or a multi-select
+    setFile(null);
+    setStatus(true); // Reset status to true (active)
+    setMessage(""); // Clear any messages
+
+
   };
 
-  const validateForm = (userData) => {
-    let valid = true;
-    const newErrors = {
-      fullName: '',
-      email: '',
-      phone: '',
-      totalSpent: '',
-      password: '',
-      roles: '',
-    };
-
-    if (!userData.fullName || userData.fullName.length < 2 || userData.fullName.length > 50) {
-      newErrors.fullName = 'Họ và tên phải lớn hơn 2 ký tự (tối đa 50 ký tự).';
-      valid = false;
-    }
-
-    if (!userData.email || !/^\S+@\S+\.\S+$/.test(userData.email)) {
-      newErrors.email = 'Email không đúng định dạng (ví dụ: example@domain.com).';
-      valid = false;
-    }
-
-    if (!userData.phone || userData.phone.length < 10 || userData.phone.length > 15) {
-      newErrors.phone = 'Số điện thoại không hợp lệ (10-15 ký tự).';
-      valid = false;
-    }
-
-    if (userData.totalSpent !== undefined && (isNaN(userData.totalSpent) || userData.totalSpent < 0)) {
-      newErrors.totalSpent = 'Tổng chi tiêu phải là số và không nhỏ hơn 0.';
-      valid = false;
-    }
-
-    if (formMode === 'add' && (!userData.password || userData.password.length < 8)) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự.';
-      valid = false;
-    }
-
-    if (selectedRoles.length === 0) {
-      newErrors.roles = 'Chức vụ không được để trống.';
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
-  };
-
-  const renderRoles = (user) => {
-    return user.userRoles.map(userRole => {
-      const role = roles.find(role => role.roleId === userRole.roleId);
-      return role ? role.roleName : '';
-    }).join(', ');
-  };
-
-  const filteredUsers = users.filter(user => {
-    const roleNames = user.userRoles.map(userRole => {
-      const role = roles.find(role => role.roleId === userRole.roleId);
-      return role ? role.roleName : '';
-    }).join(', ');
-
+  const filteredUsers = users.filter((user) => {
+    const hasUserRole = user.userRoles.some(role => role.roleName === "Người dùng");
     return (
-      (activeTab === 'users' ? roleNames.includes('Người dùng') : roleNames !== 'Người dùng') &&
-      (user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || user.phone.includes(searchTerm))
+      !hasUserRole && // Exclude users with the role "Người dùng"
+      ((user.fullName && user.fullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.phone && user.phone.includes(searchTerm)))
     );
   });
 
-  const paginatedUsers = filteredUsers.slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage);
-  const pageCount = Math.ceil(filteredUsers.length / usersPerPage);
+  const activeUsers = filteredUsers.filter(user => user.status === true);
+  const inactiveUsers = filteredUsers.filter(user => user.status === false);
+
+  const paginatedUsers = (activeTab === "active" ? activeUsers : inactiveUsers).slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage);
+  const totalPages = Math.ceil((activeTab === "active" ? activeUsers.length : inactiveUsers.length) / usersPerPage);
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const renderStatus = (status) => {
+    return status ? "Hoạt động" : "Không hoạt động";
+  };
 
   return (
-    <div className="container mx-auto p-6 bg-gray-50 rounded-lg shadow-md">
-      {message && <div className="mb-4 text-red-600 font-bold">{message}</div>}
-
-      <h2 className="text-xl mt-6 mb-4">{formMode === 'add' ? 'Thêm Người dùng' : 'Chỉnh sửa Người dùng'}</h2>
-
-      <form id="userForm" onSubmit={handleUserSubmit} className="mb-4">
-        <div className="mb-4">
-          <label className="block text-gray-700">Họ và tên</label>
-          <input type="text" name="fullName" defaultValue={userToEdit ? userToEdit.fullName : ''} className={`border rounded w-full py-2 px-3 ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`} />
-          {errors.fullName && <p className="text-red-500">{errors.fullName}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700">Email</label>
-          <input type="text" name="email" defaultValue={userToEdit ? userToEdit.email : ''} className={`border rounded w-full py-2 px-3 ${errors.email ? 'border-red-500' : 'border-gray-300'}`} />
-          {errors.email && <p className="text-red-500">{errors.email}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700">Số điện thoại</label>
-          <input type="text" name="phone" defaultValue={userToEdit ? userToEdit.phone : ''} className={`border rounded w-full py-2 px-3 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`} />
-          {errors.phone && <p className="text-red-500">{errors.phone}</p>}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700">Tổng chi tiêu</label>
-          <input type="number" name="totalSpent" defaultValue={userToEdit ? userToEdit.totalSpent : 0} className={`border rounded w-full py-2 px-3 ${errors.totalSpent ? 'border-red-500' : 'border-gray-300'}`} />
-          {errors.totalSpent && <p className="text-red-500">{errors.totalSpent}</p>}
-        </div>
-
-        {formMode === 'add' && (
-          <div className="mb-4">
-            <label className="block text-gray-700">Mật khẩu</label>
-            <input type="password" name="password" className={`border rounded w-full py-2 px-3 ${errors.password ? 'border-red-500' : 'border-gray-300'}`} />
-            {errors.password && <p className="text-red-500">{errors.password}</p>}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <label className="block text-gray-700">Chức vụ</label>
-          <select name="roles" value={selectedRoles} onChange={handleRoleChange} className={`border rounded w-full py-2 px-3 ${errors.roles ? 'border-red-500' : 'border-gray-300'}`}>
-            {roles.map(role => (
-              <option key={role.roleId} value={role.roleId}>{role.roleName}</option>
-            ))}
-          </select>
-          {errors.roles && <p className="text-red-500">{errors.roles}</p>}
-        </div>
-
-        <div className="flex">
-          <button type="submit" className="bg-blue-500 mr-3 text-white py-2 px-4 rounded">{formMode === 'add' ? 'Thêm' : 'Cập nhật'}</button>
-          <button type="button" onClick={resetForm} className="bg-gray-500 text-white py-2 px-4 rounded">Hủy</button>
-        </div>
-      </form>
-
-      <div className="flex justify-between mb-4">
-        <div className="flex space-x-4">
-          <button onClick={() => setActiveTab('users')} className={`py-2 px-4 rounded ${activeTab === 'users' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>Người dùng</button>
-          <button onClick={() => setActiveTab('employees')} className={`py-2 px-4 rounded ${activeTab === 'employees' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>Nhân viên</button>
-        </div>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <h1 className="text-3xl font-bold mb-6 text-center">Quản lý Nhân viên</h1>
+      <div className="mb-4">
         <input
           type="text"
-          placeholder="Tìm kiếm..."
+          className="w-full border border-gray-300 p-3 rounded-md shadow-sm"
+          placeholder="Tìm kiếm theo tên hoặc số điện thoại..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border rounded py-2 px-4"
         />
       </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab("active")}
+            className={`px-4 py-2 ${activeTab === "active" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded-md transition duration-200`}
+          >
+            Hoạt Động
+          </button>
+          <button
+            onClick={() => setActiveTab("inactive")}
+            className={`px-4 py-2 ${activeTab === "inactive" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded-md transition duration-200`}
+          >
+            Không Hoạt Động
+          </button>
+        </div>
+        <button
+          onClick={handleOpenModal}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200"
+        >
+          Thêm Người Dùng
+        </button>
+      </div>
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-4xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">{formMode === "add" ? "Thêm Người Dùng" : "Chỉnh Sửa Người Dùng"}</h2>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-500 hover:text-gray-700 "
+                aria-label="Close"
+              >
+                &times; {/* Close icon */}
+              </button>
+            </div>
+            <form onSubmit={handleSubmit(handleUserSubmit)}>
+              <div className="flex gap-6">
+                {/* <div className="w-full sm:w-1/3">
+                  <label className="block font-medium mb-1">Hình ảnh</label>
+                  <div className="relative w-[275px] h-[300px] border border-gray-300 rounded-md overflow-hidden">
+                    {userToEdit && userToEdit.imageUrl ? (
+                      <img
+                        src={userToEdit.imageUrl}
+                        alt="User"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">Chưa có ảnh</div>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full border border-blue-500 p-3 rounded-md mt-2"
+                    onChange={(e) => setFile(e.target.files[0])}
+                  />
+                </div> */}
+                <div className="w-full ">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-medium mb-1">Tên Đầy Đủ</label>
+                      <input
+                        type="text"
+                        {...register("fullName", {
+                          required: "Tên đầy đủ không được để trống.",
+                          pattern: {
+                            value: /^[^\d!@#$%^&*()_+=-]+$/,
+                            message: "Tên không được chứa ký tự đặc biệt hoặc số."
+                          }
+                        })}
+                        className="w-full border border-gray-300 p-2 rounded-md"
+                      />
+                      {errors.fullName && <div className="text-red-600 text-sm">{errors.fullName.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Email</label>
+                      <input
+                        type="email"
+                        {...register("email", {
+                          required: "Email không được để trống.",
+                          pattern: {
+                            value: /^\S+@\S+\.\S+$/,
+                            message: "Email không đúng định dạng."
+                          }
+                        })}
+                        className="w-full border border-gray-300 p-2 rounded-md"
+                      />
+                      {errors.email && <div className="text-red-600 text-sm">{errors.email.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Mật Khẩu</label>
+                      <input
+                        type="password"
+                        {...register("password", {
+                          required: formMode === "add" ? "Mật khẩu không được để trống." : false,
+                          minLength: {
+                            value: 8,
+                            message: "Mật khẩu phải từ 8 ký tự trở lên."
+                          }
+                        })}
+                        className="w-full border border-gray-300 p-2 rounded-md"
+                      />
+                      {errors.password && <div className="text-red-600 text-sm">{errors.password.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Số Điện Thoại</label>
+                      <input
+                        type="text"
+                        {...register("phone", {
+                          required: "Số điện thoại không được để trống.",
+                          pattern: {
+                            value: /^0\d{9}$/, // Must start with 0 and followed by 9 digits
+                            message: "Số điện thoại không hợp lệ!"
+                          }
+                        })}
+                        className="w-full border border-gray-300 p-2 rounded-md"
+                      />
+                      {errors.phone && <div className="text-red-600 text-sm">{errors.phone.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Vai Trò</label>
+                      <select
+                        {...register("roles", { required: "Phải chọn vai trò." })}
+                        className="w-full border border-gray-300 p-2 rounded-md"
+                        value={selectedRoles}
+                        onChange={handleRoleChange}
+                      >
+                        {roles
+                          .filter(role => role.roleName !== "Người dùng")
+                          .map((role) => (
+                            <option key={role.roleId} value={role.roleId}>
+                              {role.roleName}
+                            </option>
+                          ))}
+                      </select>
+                      {errors.roles && <div className="text-red-600 text-sm">{errors.roles.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Trạng Thái</label>
+                      <div className="flex items-center">
+                        <label className="flex items-center cursor-pointer mr-2">
+                          <input
+                            type="radio"
+                            name="status"
+                            value="true"
+                            checked={isStatus === true}
+                            onChange={() => setStatus(true)}
+                            className="w-4 h-4 mr-2"
+                          />
+                          Hoạt Động
+                        </label>
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="status"
+                            value="false"
+                            checked={isStatus === false}
+                            onChange={() => setStatus(false)}
+                            className="w-4 h-4 mr-2"
+                          />
+                          Không Hoạt Động
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-between items-center">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-200"
+                >
+                  {formMode === "add" ? "Thêm Người Dùng" : "Cập Nhật Người Dùng"}
+                </button>
+                <button
+                  onClick={resetForm}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-400 transition duration-200"
+                >
+                  Hủy
+                </button>
+              </div>
 
-      {loading ? (
-        <p>Đang tải...</p>
-      ) : (
-        <table className="min-w-full bg-white border-collapse border border-gray-300">
+            </form>
+          </div>
+        </div>
+      )}
+      {message && <div className="mb-4 p-3 bg-gray-200 text-center">{message}</div>}
+      <div className="overflow-x-auto bg-white shadow-md rounded-md">
+        <table className="min-w-full table-auto">
           <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Họ và tên</th>
-              <th className="py-2 px-4 border-b">Email</th>
-              <th className="py-2 px-4 border-b">Số điện thoại</th>
-              <th className="py-2 px-4 border-b">Tổng chi tiêu</th>
-              <th className="py-2 px-4 border-b">Chức vụ</th>
-              <th className="py-2 px-4 border-b">Hành động</th>
+            <tr className="bg-gray-200">
+              <th className="px-4 py-2">Tên Đầy Đủ</th>
+              <th className="px-4 py-2">Email</th>
+              <th className="px-4 py-2">Số Điện Thoại</th>
+              <th className="px-4 py-2">Vai Trò</th>
+              <th className="px-4 py-2">Trạng Thái</th>
+              <th className="px-4 py-2">Hành Động</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedUsers.map(user => (
-              <tr key={user.userId}>
-                <td className="py-2 px-4 border-b">{user.fullName}</td>
-                <td className="py-2 px-4 border-b">{user.email}</td>
-                <td className="py-2 px-4 border-b">{user.phone}</td>
-                <td className="py-2 px-4 border-b">{user.totalSpent}</td>
-                <td className="py-2 px-4 border-b">{renderRoles(user)}</td>
-                <td className="py-2 px-4 border-b">
-                  <button onClick={() => handleEdit(user)} className="bg-yellow-500 text-white py-1 px-2 rounded mr-2">Sửa</button>
-                  <button onClick={() => handleDelete(user.userId)} className="bg-red-500 text-white py-1 px-2 rounded">Xóa</button>
-                </td>
-              </tr>
-            ))}
+            {paginatedUsers
+              .map((user) => (
+                <tr key={user.userId}>
+                  <td className="px-4 py-2">{user.fullName}</td>
+                  <td className="px-4 py-2">{user.email}</td>
+                  <td className="px-4 py-2">{user.phone}</td>
+                  <td className="px-4 py-2">
+                    {user.userRoles && user.userRoles.map((role) => role.roleName).join(", ")}
+                  </td>
+                  <td className="px-4 py-2">{renderStatus(user.status)}</td>
+                  <td className="px-4 py-2">
+                    {user.userRoles.some(role => role.roleName === "Admin") ? null : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="bg-blue-500 text-white p-2 rounded-md mr-2 hover:bg-blue-600 transition duration-200"
+                        >
+                          Chỉnh Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.userId)}
+                          className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition duration-200"
+                        >
+                          Xóa
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
-      )}
-
-      <div className="mt-4 flex justify-center">
-        {Array.from({ length: pageCount }, (_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentPage(index)}
-            className={`py-2 px-4 mx-1 ${index === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-          >
-            {index + 1}
-          </button>
-        ))}
+      </div>
+      <div className="mt-4 flex justify-between items-center">
+        <button
+          disabled={currentPage === 0}
+          onClick={() => handlePageChange(currentPage - 1)}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md disabled:opacity-50"
+        >
+          Trước
+        </button>
+        <div className="flex items-center">
+          Trang {currentPage + 1} của {totalPages}
+        </div>
+        <button
+          disabled={currentPage === totalPages - 1}
+          onClick={() => handlePageChange(currentPage + 1)}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md disabled:opacity-50"
+        >
+          Tiếp
+        </button>
       </div>
     </div>
   );

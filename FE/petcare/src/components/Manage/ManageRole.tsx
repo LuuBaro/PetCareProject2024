@@ -100,7 +100,6 @@ const ManageRole = () => {
             <tr className="bg-gray-200">
               <th className="border p-2">ID</th>
               <th className="border p-2">Tên vai trò</th>
-              <th className="border p-2">Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -108,14 +107,6 @@ const ManageRole = () => {
               <tr key={role.roleId}> {/* Mỗi dòng đại diện cho một vai trò */}
                 <td className="border p-2">{role.roleId}</td> {/* Hiển thị ID vai trò */}
                 <td className="border p-2">{role.roleName}</td> {/* Hiển thị tên vai trò */}
-                <td className="border p-2">
-                  <button className="bg-yellow-500 text-white rounded p-1 mr-2" onClick={() => handleEdit(role)}>
-                    Sửa
-                  </button>
-                  <button className="bg-red-500 text-white rounded p-1" onClick={() => handleDelete(role.roleId)}>
-                    Xóa
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>
