@@ -26,7 +26,7 @@ const ProductDetailManager = () => {
   const [editId, setEditId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(""); // Added searchTerm state
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadProductDetails();
@@ -178,6 +178,22 @@ const ProductDetailManager = () => {
     }
   };
 
+  const handleCancel = () => {
+    // Reset formData, editMode, and editId
+    setFormData({
+      productId: "",
+      quantity: 0,
+      price: 0,
+      productColorId: "",
+      productSizeId: "",
+      productWeightId: "",
+      status: true,
+    });
+    setEditMode(false);
+    setEditId(null);
+    setModalOpen(false);
+  };
+
   const columns = [
     {
       name: "Sản phẩm",
@@ -254,34 +270,34 @@ const ProductDetailManager = () => {
         {/* Add Product Button */}
         <button
             onClick={() => setModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4 hover:bg-blue-600"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mb-4"
         >
           Thêm chi tiết sản phẩm
         </button>
+
         {/* Search Input */}
-        <div className="mb-4">
-          <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm, màu sắc, size, giá..."
-              className="p-2 border border-gray-300 rounded-lg w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        {/* DataTable */}
+        <input
+            type="text"
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4 p-2 border border-gray-300 rounded"
+        />
+
+        {/* Data Table */}
         <DataTable
             columns={columns}
             data={filteredProductDetails}
             pagination
-            paginationPerPage={5}
-            paginationRowsPerPageOptions={[5, 10, 15]}
             progressPending={loading}
+            highlightOnHover
         />
-        {/* Modal for adding/editing product details */}
+
+        {/* Modal */}
         {modalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-              <div className="bg-white p-6 rounded-lg w-96">
-                <h2 className="text-2xl font-bold mb-4">{editMode ? "Chỉnh sửa chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}</h2>
+            <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75">
+              <div className="bg-white p-6 rounded-lg w-1/2">
+                <h2 className="text-xl font-bold mb-4">{editMode ? "Sửa chi tiết sản phẩm" : "Thêm chi tiết sản phẩm"}</h2>
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4">
                     <label className="block mb-2">Sản phẩm</label>
@@ -289,7 +305,8 @@ const ProductDetailManager = () => {
                         name="productId"
                         value={formData.productId}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
                     >
                       <option value="">Chọn sản phẩm</option>
                       {products.map((product) => (
@@ -300,12 +317,35 @@ const ProductDetailManager = () => {
                     </select>
                   </div>
                   <div className="mb-4">
+                    <label className="block mb-2">Số lượng</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-2">Giá</label>
+                    <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
+                    />
+                  </div>
+                  <div className="mb-4">
                     <label className="block mb-2">Màu sắc</label>
                     <select
                         name="productColorId"
                         value={formData.productColorId}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
                     >
                       <option value="">Chọn màu sắc</option>
                       {colors.map((color) => (
@@ -321,7 +361,8 @@ const ProductDetailManager = () => {
                         name="productSizeId"
                         value={formData.productSizeId}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
                     >
                       <option value="">Chọn size</option>
                       {sizes.map((size) => (
@@ -337,7 +378,8 @@ const ProductDetailManager = () => {
                         name="productWeightId"
                         value={formData.productWeightId}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
                     >
                       <option value="">Chọn trọng lượng</option>
                       {weightsList.map((weight) => (
@@ -347,41 +389,21 @@ const ProductDetailManager = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-2">Số lượng</label>
+                  <div className="flex items-center mb-4">
                     <input
-                        type="number"
-                        name="quantity"
-                        value={formData.quantity}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        type="checkbox"
+                        name="status"
+                        checked={formData.status}
+                        onChange={handleStatusChange}
+                        className="mr-2"
                     />
+                    <label>Trạng thái (Active)</label>
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-2">Giá</label>
-                    <input
-                        type="number"
-                        name="price"
-                        value={formData.price}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="flex items-center">
-                      <input
-                          type="checkbox"
-                          checked={formData.status}
-                          onChange={handleStatusChange}
-                          className="mr-2"
-                      />
-                      Trạng thái (Active)
-                    </label>
-                  </div>
-                  <div className="flex justify-between">
+
+                  <div className="flex gap-4">
                     <button
                         type="button"
-                        onClick={() => setModalOpen(false)}
+                        onClick={handleCancel}
                         className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                     >
                       Đóng
@@ -390,7 +412,7 @@ const ProductDetailManager = () => {
                         type="submit"
                         className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
                     >
-                      Lưu
+                      {editMode ? "Lưu thay đổi" : "Thêm mới"}
                     </button>
                   </div>
                 </form>
