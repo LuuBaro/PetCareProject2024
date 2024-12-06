@@ -58,7 +58,7 @@ const SidebarMenu = () => {
                     {/* Dashboard */}
                     <li>
                         <Link
-                            to="/"
+                            to="/admin"
                             className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
                         >
                             <FiHome className="w-5 h-5 mr-3"/>
@@ -93,7 +93,7 @@ const SidebarMenu = () => {
                                 >
                                     <li>
                                         <Link
-                                            to="/user"
+                                            to="/admin/user"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Danh sách người dùng
@@ -101,7 +101,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/roles"
+                                            to="/admin/roles"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Phân quyền
@@ -139,7 +139,7 @@ const SidebarMenu = () => {
                                 >
                                     <li>
                                         <Link
-                                            to="/products"
+                                            to="/admin/products"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Danh sách sản phẩm
@@ -147,7 +147,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-details"
+                                            to="/admin/product-details"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Quản lý biến thể
@@ -155,7 +155,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/brands"
+                                            to="/admin/brands"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Thương hiệu
@@ -163,7 +163,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-color"
+                                            to="/admin/product-color"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Màu sắc
@@ -171,7 +171,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-image"
+                                            to="/admin/product-image"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Hình ảnh
@@ -179,7 +179,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-size"
+                                            to="/admin/product-size"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Kích thước
@@ -187,7 +187,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-weights"
+                                            to="/admin/product-weights"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Cân nặng
@@ -195,7 +195,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/product-categories"
+                                            to="/admin/product-categories"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Danh mục
@@ -209,7 +209,7 @@ const SidebarMenu = () => {
                     {/* Order Management */}
                     <li>
                         <Link
-                            to="/product-inventory"
+                            to="/admin/product-inventory"
                             className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
                         >
                             <FiPackage className="w-5 h-5 mr-3"/>
@@ -220,7 +220,7 @@ const SidebarMenu = () => {
                     {/* Voucher management*/}
                     <li>
                         <Link
-                            to="/voucher-management"
+                            to="/admin/voucher-management"
                             className="flex items-center p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-300"
                         >
                             <FaGift className="w-5 h-5 mr-3"/>
@@ -234,7 +234,7 @@ const SidebarMenu = () => {
             <div className="p-4 bg-gray-800">
 
                     <a
-                        href="/"
+                        href="/home"
                         className="block text-center text-gray-400 hover:underline"
                     >
                         Trang chủ
