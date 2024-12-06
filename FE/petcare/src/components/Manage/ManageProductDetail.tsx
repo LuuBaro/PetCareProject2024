@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import ProductDetailService from "../../service/ProductDetailService";
 import ProductService from "../../service/ProductService";
-import ProductColorService from "../../service/ProductColorsService.js";
-import ProductSizeService from "../../service/ProductSizesService.js";
-import ProductWeightService from "../../service/ProductWeightsService.js";
-import DataTable from 'react-data-table-component';
+import ProductColorService from "../../service/ProductColorsService";
+import ProductSizeService from "../../service/ProductSizesService";
+import ProductWeightService from "../../service/ProductWeightsService";
+import DataTable from "react-data-table-component";
 
 const ProductDetailManager = () => {
   const [productDetails, setProductDetails] = useState([]);
@@ -93,7 +93,7 @@ const ProductDetailManager = () => {
       setWeights(activeWeight);
     } catch (error) {
       console.error("Error loading weights", error);
-      setErrorMessage("Không thể tải danh sách weight");
+      setErrorMessage("Không thể tải danh sách trọng lượng");
     }
   };
 
@@ -112,7 +112,7 @@ const ProductDetailManager = () => {
     setErrorMessage("");
     try {
       if (editMode) {
-        await ProductDetailService.createOrUpdateProductDetail(editId, {
+        await ProductDetailService.updateProductDetail(editId, {
           product: { productId: formData.productId },
           quantity: formData.quantity,
           price: formData.price,
@@ -123,7 +123,7 @@ const ProductDetailManager = () => {
         });
         setEditMode(false);
       } else {
-        await ProductDetailService.createOrUpdateProductDetail({
+        await ProductDetailService.createProductDetail({
           product: { productId: formData.productId },
           quantity: formData.quantity,
           price: formData.price,
@@ -179,7 +179,6 @@ const ProductDetailManager = () => {
   };
 
   const handleCancel = () => {
-    // Reset formData, editMode, and editId
     setFormData({
       productId: "",
       quantity: 0,
@@ -195,103 +194,38 @@ const ProductDetailManager = () => {
   };
 
   const columns = [
-    {
-      name: "Sản phẩm",
-      selector: row => row.product?.productName,
-      sortable: true,
-    },
-    {
-      name: "Màu sắc",
-      selector: row => row.productColor?.color,
-      sortable: true,
-    },
-    {
-      name: "Size",
-      selector: row => row.productSize?.productSize,
-      sortable: true,
-    },
-    {
-      name: "Trọng lượng",
-      selector: row => row.productWeight?.weightValue,
-      sortable: true,
-    },
-    {
-      name: "Số lượng",
-      selector: row => row.quantity,
-      sortable: true,
-    },
-    {
-      name: "Giá",
-      selector: row => row.price,
-      sortable: true,
-    },
-    {
-      name: "Trạng thái",
-      selector: row => (row.status ? "Active" : "Inactive"),
-      sortable: true,
-    },
+    { name: "Sản phẩm", selector: (row) => row.product?.productName, sortable: true },
+    { name: "Màu sắc", selector: (row) => row.productColor?.color, sortable: true },
+    { name: "Size", selector: (row) => row.productSize?.productSize, sortable: true },
+    { name: "Trọng lượng", selector: (row) => row.productWeight?.weightValue, sortable: true },
+    { name: "Số lượng", selector: (row) => row.quantity, sortable: true },
+    { name: "Giá", selector: (row) => row.price, sortable: true },
+    { name: "Trạng thái", selector: (row) => (row.status ? "Active" : "Inactive"), sortable: true },
     {
       name: "Hành động",
       cell: (row) => (
-          <div className="flex gap-2">
-            <button
-                onClick={() => handleEdit(row)}
-                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
-            >
-              Sửa
-            </button>
-            <button
-                onClick={() => handleDelete(row.productDetailId)}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
-            >
-              Xóa
-            </button>
-          </div>
+          <>
+            <button onClick={() => handleEdit(row)} className="btn btn-primary btn-sm">Sửa</button>
+            <button onClick={() => handleDelete(row.productDetailId)} className="btn btn-danger btn-sm">Xóa</button>
+          </>
       ),
     },
   ];
 
-  // Filtering logic for search
-  const filteredProductDetails = productDetails.filter((detail) => {
-    return (
-        detail.product?.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        detail.productColor?.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        detail.productSize?.productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        detail.productWeight?.weightValue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        detail.quantity.toString().includes(searchTerm) ||
-        detail.price.toString().includes(searchTerm)
-    );
-  });
-
   return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Product Detail Manager</h1>
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-        {/* Add Product Button */}
-        <button
-            onClick={() => setModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mb-4"
-        >
-          Thêm chi tiết sản phẩm
-        </button>
-
-        {/* Search Input */}
-        <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4 p-2 border border-gray-300 rounded"
-        />
-
-        {/* Data Table */}
+      <div>
+        <h2>Quản lý chi tiết sản phẩm</h2>
+        {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+        <button onClick={() => setModalOpen(true)} className="btn btn-success mb-3">Thêm chi tiết sản phẩm</button>
         <DataTable
             columns={columns}
-            data={filteredProductDetails}
+            data={productDetails.filter((detail) =>
+                detail.product?.productName.toLowerCase().includes(searchTerm.toLowerCase())
+            )}
             pagination
-            progressPending={loading}
             highlightOnHover
         />
+        {/* Modal and form handling will go here */}
 
         {/* Modal */}
         {modalOpen && (

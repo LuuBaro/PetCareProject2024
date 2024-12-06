@@ -19,10 +19,16 @@ public class ProductDetailController {
     private ProductDetailService productDetailService;
 
     // Create or Update a ProductDetail
+
     @PostMapping
-    public ResponseEntity<ProductDetail> createOrUpdateProductDetail(@RequestBody ProductDetail productDetail) {
-        ProductDetail savedProductDetail = productDetailService.saveOrUpdateProductDetail(productDetail);
-        return new ResponseEntity<>(savedProductDetail, HttpStatus.CREATED);
+    public ProductDetail createProductDetail(@RequestBody ProductDetail productDetail) {
+        return productDetailService.createProductDetail(productDetail);
+    }
+
+
+    @PutMapping("/{productDetailId}")
+    public ProductDetail updateProductDetail(@PathVariable Long productDetailId, @RequestBody ProductDetail updatedProductDetail) {
+        return productDetailService.updateProductDetail(productDetailId, updatedProductDetail);
     }
 
     // Get all ProductDetails
