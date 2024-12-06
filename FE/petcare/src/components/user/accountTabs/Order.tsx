@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DataTable from "react-data-table-component";
 
-
 interface OrderDetail {
     productDetailId: number;
     productId: number;
