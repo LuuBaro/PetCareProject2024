@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from "react";
-import {useLocation, useNavigate} from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../header/Header";
 import Modal from "react-modal";
 import Swal from "sweetalert2";
 import axios from "axios";
 import AddressModal from "./AddressModal";
-import {getProvinces, getDistricts, getWards, addAddress} from '../../service/AddressService';
+import { getProvinces, getDistricts, getWards, addAddress } from '../../service/AddressService';
 
 const API_BASE_URL = 'https://online-gateway.ghn.vn/shiip/public-api'; // Base URL của API Giao Hàng Nhanh
 const TOKEN = '0fe4c8c9-71cd-11ef-9839-ea1b8b4124d2'; // Thay bằng token thật của bạn
@@ -29,7 +29,7 @@ interface AddressFormProps {
 }
 
 Modal.setAppElement('#root');
-const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
+const Checkout: React.FC<AddressFormProps> = ({ onSubmit, onCancel }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const products: Product[] = location.state?.products || [];
@@ -78,11 +78,80 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     const [finalTotal, setFinalTotal] = useState(total - shippingFee);
 
 
+    const [errors, setErrors] = useState({
+        name: '',
+        phone: '',
+    });
+    const validateForm = () => {
+        if (!formData.name.trim()) {
+            Swal.fire({
+                icon: "warning",
+                title: "Lỗi thông tin",
+                text: "Họ và tên không được để trống.",
+            });
+            return false;
+        }
+        
+        if (/\d/.test(formData.name)) { // Kiểm tra nếu có số trong chuỗi
+            Swal.fire({
+                icon: "warning",
+                title: "Lỗi thông tin",
+                text: "Họ và tên không được chứa số.",
+            });
+            return false;
+        }
+    
+        if (
+            !formData.phone.trim() || 
+            !/^0(86|96|97|98|32|33|34|35|36|37|38|39|88|91|94|83|84|85|81|82|89|90|93|70|79|77|76|78|92|56|58|99|59)\d{7}$/.test(formData.phone)
+        ) {
+            Swal.fire({
+                icon: "warning",
+                title: "Lỗi thông tin",
+                text: "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng (10 số, bắt đầu bằng 0, và đúng đầu số của nhà mạng Việt Nam).",
+            });
+            return false;
+        }
+             
+    
+        if (!formData.address.trim() || !selectedProvince || !selectedDistrict || !formData.ward) {
+            Swal.fire({
+                icon: "warning",
+                title: "Thiếu thông tin",
+                text: "Vui lòng cung cấp đầy đủ thông tin địa chỉ giao hàng.",
+            });
+            return false;
+        }
+    
+        if (!selectedPaymentMethod) {
+            Swal.fire({
+                icon: "warning",
+                title: "Thiếu phương thức thanh toán",
+                text: "Vui lòng chọn phương thức thanh toán.",
+            });
+            return false;
+        }
+    
+        if (products.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Giỏ hàng trống",
+                text: "Giỏ hàng trống, không thể thanh toán.",
+            });
+            return false;
+        }
+    
+        return true; // Tất cả điều kiện hợp lệ
+    };
+    
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const selectedDistrictObj = districts.find(d => d.DistrictID === parseInt(selectedDistrict, 10));
         const selectedWardObj = wards.find(w => w.WardCode === formData.ward);
+
 
         const addressData = {
             fullAddress: `Họ và tên: ${formData.name}\nSố điện thoại: ${formData.phone}\nĐịa chỉ: ${formData.address}, ${selectedWardObj?.WardName}, ${selectedDistrictObj?.DistrictName}, ${selectedProvince}`,
@@ -93,6 +162,12 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
             userId: { id: userId }
         };
 
+        if (validateForm()) {
+            // Nếu không có lỗi, gửi dữ liệu
+            console.log('Dữ liệu hợp lệ:', formData);
+        } else {
+            console.log('Dữ liệu không hợp lệ');
+        }
         try {
             const result = await addAddress(addressData);
             if (result) {
@@ -106,7 +181,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const {name, value, type} = e.target;
+        const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
         setFormData(prevFormData => ({
@@ -186,7 +261,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     };
 
 
-// Hàm tính phí vận chuyển
+    // Hàm tính phí vận chuyển
     const calculateShippingFee = async ({ toDistrictId, toWardCode, weight }) => {
         try {
             const payload = {
@@ -222,7 +297,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
         }
     };
 
-// Tính lại phí vận chuyển khi người dùng chọn địa chỉ mới
+    // Tính lại phí vận chuyển khi người dùng chọn địa chỉ mới
     useEffect(() => {
         // Kiểm tra nếu đủ thông tin quận/huyện và phường/xã
         if (selectedDistrict && formData.ward) {
@@ -278,6 +353,10 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                 text: "Giỏ hàng trống, không thể thanh toán.",
             });
             return;
+        }
+
+        if (!validateForm()) {
+            return; // Nếu không hợp lệ, dừng xử lý
         }
 
         // Tính phí vận chuyển
@@ -462,7 +541,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
         try {
             const response = await fetch("http://localhost:8080/api/addresses", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId,
                     fullAddress: formattedFullAddress,
@@ -500,7 +579,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     };
 
 
-// Hàm tính toán và áp dụng mã giảm giá
+    // Hàm tính toán và áp dụng mã giảm giá
     const applyVoucher = () => {
         if (!selectedVoucher) {
             Swal.fire({
@@ -534,12 +613,12 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
     };
 
 
-// Cập nhật giá trị tổng cộng khi phí vận chuyển hoặc tiền hàng thay đổi
+    // Cập nhật giá trị tổng cộng khi phí vận chuyển hoặc tiền hàng thay đổi
     useEffect(() => {
         setFinalTotal(total + shippingFee - discountAmount);
     }, [total, shippingFee, discountAmount]);
 
-// Hàm bỏ chọn voucher
+    // Hàm bỏ chọn voucher
     const removeVoucher = () => {
         setSelectedVoucher(null); // Xóa voucherId
         setDiscountPercent(0); // Đặt phần trăm giảm giá về 0
@@ -593,9 +672,11 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+            errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-400 focus:ring-blue-500 focus:border-blue-500'"
                                         required
                                     />
+                                    {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
                                 </div>
                                 <div className="flex-1">
                                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
@@ -607,11 +688,14 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+            errors.phone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-400 focus:ring-blue-500 focus:border-blue-500'"
                                         required
                                     />
+                                    {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                                 </div>
                             </div>
+
 
                             {/* Địa chỉ cụ thể */}
                             <div className="mb-4">
@@ -642,7 +726,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                                         onChange={(e) => {
                                             setSelectedProvince(e.target.value);
                                             setSelectedDistrict('');
-                                            setFormData((prev) => ({...prev, ward: ''}));
+                                            setFormData((prev) => ({ ...prev, ward: '' }));
                                         }}
                                         className="mt-1 block w-full px-2 py-1 border border-gray-400 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         required
@@ -725,7 +809,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                             {/* Ô chọn COD */}
                             <div
                                 className={`border p-4 rounded-md cursor-pointer flex items-center ${selectedPaymentMethod === "cod" ? "border-[#00b7c0]" : "border-gray-300"
-                                }`}
+                                    }`}
                                 onClick={() => handlePaymentSelect("cod")}
                             >
                                 <div className="custom-radio mr-2">
@@ -754,7 +838,7 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                             {/* Ô chọn VNPay */}
                             <div
                                 className={`border p-4 rounded-md cursor-pointer flex items-center ${selectedPaymentMethod === "vnpay" ? "border-[#00b7c0]" : "border-gray-300"
-                                }`}
+                                    }`}
                                 onClick={() => handlePaymentSelect("vnpay")}
                             >
                                 <div className="custom-radio mr-2">
@@ -794,37 +878,37 @@ const Checkout: React.FC<AddressFormProps> = ({onSubmit, onCancel}) => {
                         </h2>
                         <table className="w-full table-auto mb-4">
                             <thead>
-                            <tr className="border-b-2 border-[#F2BC27] font-bold text-lg">
-                                <th className="p-2 text-left">Sản phẩm</th>
-                                <th className="p-2 text-left">Đơn giá</th>
-                                <th className="p-2 text-left">Màu sắc</th>
-                                <th className="p-2 text-left">Kích thước</th>
-                                <th className="p-2 text-left">Cân nặng</th>
-                                <th className="p-2 text-left">Số lượng</th>
-                                <th className="p-2 text-right">Thành tiền</th>
-                            </tr>
+                                <tr className="border-b-2 border-[#F2BC27] font-bold text-lg">
+                                    <th className="p-2 text-left">Sản phẩm</th>
+                                    <th className="p-2 text-left">Đơn giá</th>
+                                    <th className="p-2 text-left">Màu sắc</th>
+                                    <th className="p-2 text-left">Kích thước</th>
+                                    <th className="p-2 text-left">Cân nặng</th>
+                                    <th className="p-2 text-left">Số lượng</th>
+                                    <th className="p-2 text-right">Thành tiền</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {products.map((product) => (
-                                <tr key={product.productId} className="border-t">
-                                    <td className="p-2 flex items-center">
-                                        <img
-                                            src={product.image}
-                                            alt={product.productName}
-                                            className="w-16 h-16 object-cover rounded-lg mr-4"
-                                        />
-                                        <span>{product.productName}</span>
-                                    </td>
-                                    <td className="p-2">{formatPrice(product.price)}</td>
-                                    <td className="p-2">{product.color}</td>
-                                    <td className="p-2">{product.size}</td>
-                                    <td className="p-2">{product.weight} kg</td>
-                                    <td className="p-2">{product.quantity}</td>
-                                    <td className="p-2 text-right font-bold">
-                                        {formatPrice(product.price * product.quantity)}
-                                    </td>
-                                </tr>
-                            ))}
+                                {products.map((product) => (
+                                    <tr key={product.productId} className="border-t">
+                                        <td className="p-2 flex items-center">
+                                            <img
+                                                src={product.image}
+                                                alt={product.productName}
+                                                className="w-16 h-16 object-cover rounded-lg mr-4"
+                                            />
+                                            <span>{product.productName}</span>
+                                        </td>
+                                        <td className="p-2">{formatPrice(product.price)}</td>
+                                        <td className="p-2">{product.color}</td>
+                                        <td className="p-2">{product.size}</td>
+                                        <td className="p-2">{product.weight} kg</td>
+                                        <td className="p-2">{product.quantity}</td>
+                                        <td className="p-2 text-right font-bold">
+                                            {formatPrice(product.price * product.quantity)}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>

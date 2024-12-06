@@ -1,16 +1,16 @@
 import React from "react";
-
+import Swal from "sweetalert2";
 function AccountInfo({
-                         avatarUrl,
-                         setAvatarUrl,
-                         userInfo,
-                         isEditing,
-                         onChange,
-                         onSave,
-                         onCancel,
-                         onEdit,
-                         onAvatarUpload,
-                     }) {
+    avatarUrl,
+    setAvatarUrl,
+    userInfo,
+    isEditing,
+    onChange,
+    onSave,
+    onCancel,
+    onEdit,
+    onAvatarUpload,
+}) {
 
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
@@ -29,6 +29,26 @@ function AccountInfo({
             console.error("Error in handleAvatarChange:", error);
         }
     };
+
+    const validatePhoneNumber = (phone) => {
+        // Regex for valid Vietnamese phone numbers
+        const regex = /^0(86|96|97|98|32|33|34|35|36|37|38|39|88|91|94|83|84|85|81|82|89|90|93|70|79|77|76|78|92|56|58|99|59)\d{7}$/;
+        return regex.test(phone);
+    };
+
+    const handleSave = () => {
+        if (!validatePhoneNumber(userInfo.phone)) {
+            Swal.fire({
+                icon: "warning",
+                title: "Lỗi thông tin",
+                text: "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng (10 số, bắt đầu bằng 0, và đúng đầu số của nhà mạng Việt Nam).",
+            });
+            return;
+        }
+
+        onSave(); // Call the parent-provided save function if validation passes
+    };
+
 
     return (
         <><h2 className="text-4xl font-extrabold mb-6 text-gray-700 mt-2">Thông tin cá nhân</h2><p
@@ -59,8 +79,8 @@ function AccountInfo({
                         </button>
                     </div>
                     <button onClick={() => document.getElementById("avatar-input").click()}
-                            className="mt-4 text-sm text-blue-500 font-semibold">
-                    Thay đổi ảnh đại diện
+                        className="mt-4 text-sm text-blue-500 font-semibold">
+                        Thay đổi ảnh đại diện
                     </button>
                     <input
                         id="avatar-input"
@@ -85,7 +105,7 @@ function AccountInfo({
                                         name="fullName"
                                         value={userInfo.fullName}
                                         onChange={onChange}
-                                        className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow"/>
+                                        className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow" />
                                 ) : (
                                     <span className="text-gray-900 text-lg flex-grow">
                                         {userInfo.fullName || 'Chưa cập nhật'}
@@ -129,7 +149,7 @@ function AccountInfo({
                                         name="phone"
                                         value={userInfo.phone || ""}
                                         onChange={onChange}
-                                        className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow"/>
+                                        className="text-gray-900 text-lg px-4 py-2 border border-gray-300 rounded-lg flex-grow" />
                                 ) : (
                                     <span className="text-gray-900 text-lg flex-grow">
                                         {userInfo.phone && userInfo.phone.trim() !== "null"
@@ -151,7 +171,7 @@ function AccountInfo({
                                 Hủy
                             </button>
                             <button
-                                onClick={onSave}
+                                onClick={handleSave}
                                 className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600"
                             >
                                 Lưu
