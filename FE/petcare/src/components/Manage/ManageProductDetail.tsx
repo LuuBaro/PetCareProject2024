@@ -7,14 +7,29 @@ import ProductWeightService from "../../service/ProductWeightsService";
 import DataTable from "react-data-table-component";
 import {MdEdit, MdLoop, MdAdd} from "react-icons/md";
 import Swal from "sweetalert2";
+interface Product {
+    productId: string;
+    productName: string;
+    status: boolean;
+}
+
+interface FormData {
+    productId: string;
+    quantity: number;
+    price: number;
+    productColorId: string;
+    productSizeId: string;
+    productWeightId: string;
+    status: boolean;
+}
 
 const ProductDetailManager = () => {
     const [productDetails, setProductDetails] = useState([]);
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [colors, setColors] = useState([]);
     const [weightsList, setWeights] = useState([]);
     const [sizes, setSizes] = useState([]);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         productId: "",
         quantity: 0,
         price: 0,
@@ -26,7 +41,7 @@ const ProductDetailManager = () => {
     const [loading, setLoading] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
-    const [errorMessage, setErrorMessage] = useState("");
+    const [formErrors, setFormErrors] = useState({});
     const [modalOpen, setModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -53,11 +68,26 @@ const ProductDetailManager = () => {
 
     const loadProducts = async () => {
         try {
-            const response = await ProductService.getAllProducts();
+            const response: { data: Product[] } = await ProductService.getAllProducts();
             setProducts(response.data);
+            const activeProducts = response.data.filter((product) => product.status); // Filter out inactive products
+            setProducts(activeProducts);
         } catch (error) {
             console.error("Error loading products", error);
+            Swal.fire("Lỗi", "Không thể tải danh sách sản phẩm.", "error");
         }
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        if (!formData.productId) errors.productId = "Vui lòng chọn sản phẩm.";
+        if (formData.quantity <= 0) errors.quantity = "Số lượng phải lớn hơn 0.";
+        if (formData.price <= 0) errors.price = "Giá phải lớn hơn 0.";
+        if (!formData.productColorId) errors.productColorId = "Vui lòng chọn màu sắc.";
+        if (!formData.productSizeId) errors.productSizeId = "Vui lòng chọn size.";
+        if (!formData.productWeightId) errors.productWeightId = "Vui lòng chọn trọng lượng.";
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const loadColors = async () => {
@@ -98,6 +128,8 @@ const ProductDetailManager = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
+
         setLoading(true);
         try {
             if (editMode) {
@@ -278,39 +310,44 @@ const ProductDetailManager = () => {
                                     required
                                 >
                                     <option value="">Chọn sản phẩm</option>
-                                    {products.map((product) => (
-                                        <option key={product.productId} value={product.productId}>
-                                            {product.productName}
-                                        </option>
-                                    ))}
+                                    {products
+                                        .filter((product) => product.status) // Only show active products
+                                        .map((product) => (
+                                            <option key={product.productId} value={product.productId}>
+                                                {product.productName}
+                                            </option>
+                                        ))}
                                 </select>
+                                {formErrors.productId && <p className="text-red-500 text-sm">{formErrors.productId}</p>}
                             </div>
                             <div className="mb-4">
                                 <label className="block mb-2">Số lượng</label>
                                 <input
                                     type="number"
-                                    name="quantity"
+                                    name="quantity" // Correct name
                                     value={formData.quantity}
                                     onChange={handleInputChange}
                                     className="w-full p-2 border border-gray-300 rounded"
                                     required
                                 />
+                                {formErrors.quantity && <p className="text-red-500 text-sm">{formErrors.quantity}</p>}
                             </div>
                             <div className="mb-4">
                                 <label className="block mb-2">Giá</label>
                                 <input
                                     type="number"
-                                    name="price"
+                                    name="price" // Correct name
                                     value={formData.price}
                                     onChange={handleInputChange}
                                     className="w-full p-2 border border-gray-300 rounded"
                                     required
                                 />
+                                {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
                             </div>
                             <div className="mb-4">
                                 <label className="block mb-2">Màu sắc</label>
                                 <select
-                                    name="productColorId"
+                                    name="productColorId" // Correct name
                                     value={formData.productColorId}
                                     onChange={handleInputChange}
                                     className="w-full p-2 border border-gray-300 rounded"
@@ -323,11 +360,13 @@ const ProductDetailManager = () => {
                                         </option>
                                     ))}
                                 </select>
+                                {formErrors.productColorId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productColorId}</p>}
                             </div>
                             <div className="mb-4">
                                 <label className="block mb-2">Size</label>
                                 <select
-                                    name="productSizeId"
+                                    name="productSizeId" // Correct name
                                     value={formData.productSizeId}
                                     onChange={handleInputChange}
                                     className="w-full p-2 border border-gray-300 rounded"
@@ -340,11 +379,13 @@ const ProductDetailManager = () => {
                                         </option>
                                     ))}
                                 </select>
+                                {formErrors.productSizeId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productSizeId}</p>}
                             </div>
                             <div className="mb-4">
                                 <label className="block mb-2">Trọng lượng</label>
                                 <select
-                                    name="productWeightId"
+                                    name="productWeightId" // Correct name
                                     value={formData.productWeightId}
                                     onChange={handleInputChange}
                                     className="w-full p-2 border border-gray-300 rounded"
@@ -357,11 +398,13 @@ const ProductDetailManager = () => {
                                         </option>
                                     ))}
                                 </select>
+                                {formErrors.productWeightId &&
+                                    <p className="text-red-500 text-sm">{formErrors.productWeightId}</p>}
                             </div>
                             <div className="flex items-center mb-4">
                                 <input
                                     type="checkbox"
-                                    name="status"
+                                    name="status" // Correct name
                                     checked={formData.status}
                                     onChange={handleStatusChange}
                                     className="mr-2"
