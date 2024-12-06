@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import DataTable from 'react-data-table-component';
 
 const API_URL = 'http://localhost:8080/api/product-weights';
 
@@ -17,6 +18,7 @@ const ManageWeights: React.FC = () => {
   const [editWeightId, setEditWeightId] = useState<number | null>(null);
   const [editWeightValue, setEditWeightValue] = useState<string>('');
   const [editStatus, setEditStatus] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>(''); // State for search term
 
   useEffect(() => {
     fetchProductWeights();
@@ -77,113 +79,140 @@ const ManageWeights: React.FC = () => {
     }
   };
 
+  // Filter product weights based on the search term
+  const filteredProductWeights = productWeights.filter((weight) =>
+      weight.weightValue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (weight.status ? 'active' : 'inactive').includes(searchTerm.toLowerCase())
+  );
+
+  // DataTable columns configuration
+  const columns = [
+    {
+      name: 'ID',
+      selector: (row: ProductWeight) => row.productWeightId,
+      sortable: true,
+    },
+    {
+      name: 'Weight Value',
+      selector: (row: ProductWeight) => row.weightValue,
+      sortable: true,
+      cell: (row: ProductWeight) => (
+          editWeightId === row.productWeightId
+              ? <input
+                  type="text"
+                  value={editWeightValue}
+                  onChange={(e) => setEditWeightValue(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md w-60"
+              />
+              : row.weightValue
+      ),
+    },
+    {
+      name: 'Status',
+      selector: (row: ProductWeight) => (row.status ? 'Active' : 'Inactive'),
+      sortable: true,
+      cell: (row: ProductWeight) => (
+          editWeightId === row.productWeightId
+              ? <select
+                  value={editStatus ? 'Active' : 'Inactive'}
+                  onChange={(e) => setEditStatus(e.target.value === 'Active')}
+                  className="p-2 border border-gray-300 rounded-md"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              : <span className={`inline-block px-2 py-1 rounded-md ${row.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+              {row.status ? 'Active' : 'Inactive'}
+            </span>
+      ),
+    },
+    {
+      name: 'Actions',
+      cell: (row: ProductWeight) => (
+          <div className="flex gap-2">
+            {editWeightId === row.productWeightId ? (
+                <button
+                    onClick={updateProductWeight}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                >
+                  Save
+                </button>
+            ) : (
+                <button
+                    onClick={() => {
+                      setEditWeightId(row.productWeightId);
+                      setEditWeightValue(row.weightValue);
+                      setEditStatus(row.status);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
+                >
+                  Edit
+                </button>
+            )}
+            <button
+                onClick={() => deleteProductWeight(row.productWeightId)}
+                className="text-red-500 hover:text-red-700"
+            >
+              Delete
+            </button>
+          </div>
+      ),
+    },
+  ];
+
   return (
-      <div className="p-6">
-        <h2 className="text-2xl font-bold mb-6 text-center">Manage Product Weights</h2>
+      <div className="p-6 space-y-6 bg-gray-50 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-semibold text-center text-gray-700">Manage Product Weights</h2>
 
         {/* Add New Weight */}
-        <div className="mb-6 flex justify-center space-x-2">
+        <div className="flex justify-center gap-4">
           <input
               type="text"
               value={newWeight}
               onChange={(e) => setNewWeight(e.target.value)}
               placeholder="Enter new product weight"
-              className="p-2 border border-gray-300 rounded-md w-60"
+              className="p-2 border border-gray-300 rounded-md w-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
               value={newStatus ? 'Active' : 'Inactive'}
               onChange={(e) => setNewStatus(e.target.value === 'Active')}
-              className="p-2 border border-gray-300 rounded-md"
+              className="p-2 border border-gray-300 rounded-md w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
           <button
               onClick={addProductWeight}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md w-32"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md w-32 hover:bg-blue-600"
           >
             Add Weight
           </button>
         </div>
 
-        {/* Display Product Weights */}
+        {/* Search */}
+        <div className="flex justify-center">
+          <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by weight or status"
+              className="p-2 border border-gray-300 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* DataTable */}
         {isLoading ? (
-            <p className="text-center">Loading...</p>
+            <p className="text-center text-gray-600">Loading...</p>
         ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full table-auto border-collapse border border-gray-300">
-                <thead className="bg-gray-200">
-                <tr>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">ID</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Weight Value</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Status</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {productWeights.map((weight) => (
-                    <tr key={weight.productWeightId} className="hover:bg-gray-100">
-                      <td className="py-2 px-4 border-b text-sm">{weight.productWeightId}</td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editWeightId === weight.productWeightId ? (
-                            <input
-                                type="text"
-                                value={editWeightValue}
-                                onChange={(e) => setEditWeightValue(e.target.value)}
-                                className="p-2 border border-gray-300 rounded-md w-60"
-                            />
-                        ) : (
-                            weight.weightValue
-                        )}
-                      </td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editWeightId === weight.productWeightId ? (
-                            <select
-                                value={editStatus ? 'Active' : 'Inactive'}
-                                onChange={(e) => setEditStatus(e.target.value === 'Active')}
-                                className="p-2 border border-gray-300 rounded-md"
-                            >
-                              <option value="Active">Active</option>
-                              <option value="Inactive">Inactive</option>
-                            </select>
-                        ) : (
-                            <span className={`inline-block px-2 py-1 rounded-md ${weight.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                        {weight.status ? 'Active' : 'Inactive'}
-                      </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editWeightId === weight.productWeightId ? (
-                            <button
-                                onClick={updateProductWeight}
-                                className="bg-blue-500 text-white px-4 py-2 rounded-md"
-                            >
-                              Save
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                  setEditWeightId(weight.productWeightId);
-                                  setEditWeightValue(weight.weightValue);
-                                  setEditStatus(weight.status);
-                                }}
-                                className="text-blue-500 hover:text-blue-700 mr-2"
-                            >
-                              Edit
-                            </button>
-                        )}
-                        <button
-                            onClick={() => deleteProductWeight(weight.productWeightId)}
-                            className="text-red-500 hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+                title="Product Weights List"
+                columns={columns}
+                data={filteredProductWeights}
+                pagination
+                highlightOnHover
+                responsive
+                noDataComponent="No data available"
+            />
         )}
       </div>
   );
