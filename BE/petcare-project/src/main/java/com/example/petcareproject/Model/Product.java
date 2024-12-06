@@ -19,6 +19,8 @@ public class Product {
     private String description;
     private String imageUrl;
 
+    private boolean status;
+
     @ManyToOne
     @JoinColumn(name = "productCategogyId")
     private ProductCategogy category;
