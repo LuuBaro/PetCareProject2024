@@ -30,5 +30,4 @@ public class ProductDetail {
     @ManyToOne
     @JoinColumn(name = "productWeightId")
     private ProductWeight productWeight;
-
 }

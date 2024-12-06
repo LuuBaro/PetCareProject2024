@@ -25,6 +25,18 @@ const ProductDetailService = {
     }
   },
 
+  updateProductStatus: async (productDetailId, status) => {
+    try {
+      const response = await axios.put(
+          `${BASE_URL}/${productDetailId}/status`,
+          { status }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error toggling product detail status:", error);
+      throw error;
+    }
+  },
 
   // Get all ProductDetails
   getAllProductDetails: async () => {

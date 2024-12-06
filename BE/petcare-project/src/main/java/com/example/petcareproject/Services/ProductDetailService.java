@@ -20,12 +20,6 @@ public class ProductDetailService {
         return productDetailRepository.save(productDetail);
     }
 
-    /**
-     * Method to update a ProductDetail.
-     * @param productDetailId The ID of the ProductDetail to update.
-     * @param updatedProductDetail The ProductDetail object with updated information.
-     * @return The updated ProductDetail object.
-     */
     public ProductDetail updateProductDetail(Long productDetailId, ProductDetail updatedProductDetail) {
         // Find the existing ProductDetail by ID
         Optional<ProductDetail> existingProductDetailOpt = productDetailRepository.findById(productDetailId);
@@ -33,14 +27,28 @@ public class ProductDetailService {
         if (existingProductDetailOpt.isPresent()) {
             ProductDetail existingProductDetail = existingProductDetailOpt.get();
 
-            // Update the fields with the new values
-            existingProductDetail.setQuantity(updatedProductDetail.getQuantity());
-            existingProductDetail.setPrice(updatedProductDetail.getPrice());
-            existingProductDetail.setStatus(updatedProductDetail.getStatus());
-            existingProductDetail.setProduct(updatedProductDetail.getProduct());
-            existingProductDetail.setProductColor(updatedProductDetail.getProductColor());
-            existingProductDetail.setProductSize(updatedProductDetail.getProductSize());
-            existingProductDetail.setProductWeight(updatedProductDetail.getProductWeight());
+            // Update only the fields that are not null in updatedProductDetail
+            if (updatedProductDetail.getQuantity() != 0) {
+                existingProductDetail.setQuantity(updatedProductDetail.getQuantity());
+            }
+            if (updatedProductDetail.getPrice() != 0) {
+                existingProductDetail.setPrice(updatedProductDetail.getPrice());
+            }
+            if (updatedProductDetail.getStatus() != null) {
+                existingProductDetail.setStatus(updatedProductDetail.getStatus());
+            }
+            if (updatedProductDetail.getProduct() != null) {
+                existingProductDetail.setProduct(updatedProductDetail.getProduct());
+            }
+            if (updatedProductDetail.getProductColor() != null) {
+                existingProductDetail.setProductColor(updatedProductDetail.getProductColor());
+            }
+            if (updatedProductDetail.getProductSize() != null) {
+                existingProductDetail.setProductSize(updatedProductDetail.getProductSize());
+            }
+            if (updatedProductDetail.getProductWeight() != null) {
+                existingProductDetail.setProductWeight(updatedProductDetail.getProductWeight());
+            }
 
             // Save the updated product detail
             return productDetailRepository.save(existingProductDetail);
@@ -79,5 +87,9 @@ public class ProductDetailService {
 
     public List<ProductDetail> getProductDetailsByProductId(Long productId) {
         return productDetailRepository.findAllByProductId(productId);
+    }
+
+    public boolean existsById(Long id) {
+        return productDetailRepository.existsById(id);
     }
 }
