@@ -40,7 +40,7 @@ function App() {
       <CartProvider> {/* Bọc toàn bộ ứng dụng trong CartProvider */}
         <Router>
           <Routes>
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/comingsoon" element={<ComingSoon />} />

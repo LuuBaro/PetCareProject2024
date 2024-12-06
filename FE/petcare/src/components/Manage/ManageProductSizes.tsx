@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import DataTable from 'react-data-table-component';
 
 const API_URL = 'http://localhost:8080/api/product-sizes';
 
@@ -17,6 +18,7 @@ const ProductSizeManager: React.FC = () => {
   const [editSizeId, setEditSizeId] = useState<number | null>(null);
   const [editSize, setEditSize] = useState<string>('');
   const [editStatus, setEditStatus] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>(''); // State for search term
 
   useEffect(() => {
     fetchProductSizes();
@@ -71,11 +73,94 @@ const ProductSizeManager: React.FC = () => {
               ? { ...size, productSize: editSize, status: editStatus }
               : size
       ));
-      setEditSizeId(null); // Close the editor
+      setEditSizeId(null); // Close the editor after saving
+      setEditSize(''); // Clear the edit form fields
+      setEditStatus(true); // Reset the status to Active
     } catch (error) {
       console.error('Error updating product size:', error);
     }
   };
+
+  // Filtered data based on search term
+  const filteredProductSizes = productSizes.filter((size) =>
+      size.productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (size.status ? 'active' : 'inactive').includes(searchTerm.toLowerCase())
+  );
+
+  // DataTable columns
+  const columns = [
+    {
+      name: 'ID',
+      selector: (row: ProductSize) => row.productSizeId,
+      sortable: true,
+    },
+    {
+      name: 'Product Size',
+      selector: (row: ProductSize) => row.productSize,
+      sortable: true,
+      cell: (row: ProductSize) => (
+          editSizeId === row.productSizeId
+              ? <input
+                  type="text"
+                  value={editSize}
+                  onChange={(e) => setEditSize(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md w-60"
+              />
+              : row.productSize
+      ),
+    },
+    {
+      name: 'Status',
+      selector: (row: ProductSize) => (row.status ? 'Active' : 'Inactive'),
+      sortable: true,
+      cell: (row: ProductSize) => (
+          editSizeId === row.productSizeId
+              ? <select
+                  value={editStatus ? 'Active' : 'Inactive'}
+                  onChange={(e) => setEditStatus(e.target.value === 'Active')}
+                  className="p-2 border border-gray-300 rounded-md"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              : <span className={`px-2 py-1 rounded-md ${row.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+              {row.status ? 'Active' : 'Inactive'}
+            </span>
+      ),
+    },
+    {
+      name: 'Actions',
+      cell: (row: ProductSize) => (
+          <div className="flex gap-2">
+            {editSizeId === row.productSizeId ? (
+                <button
+                    onClick={updateProductSize}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                >
+                  Save
+                </button>
+            ) : (
+                <button
+                    onClick={() => {
+                      setEditSizeId(row.productSizeId);
+                      setEditSize(row.productSize);
+                      setEditStatus(row.status);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
+                >
+                  Edit
+                </button>
+            )}
+            <button
+                onClick={() => deleteProductSize(row.productSizeId)}
+                className="text-red-500 hover:text-red-700"
+            >
+              Delete
+            </button>
+          </div>
+      ),
+    },
+  ];
 
   return (
       <div className="p-6">
@@ -106,84 +191,29 @@ const ProductSizeManager: React.FC = () => {
           </button>
         </div>
 
-        {/* Display Product Sizes */}
+        {/* Search Input */}
+        <div className="mb-4 flex justify-center">
+          <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by size or status"
+              className="p-2 border border-gray-300 rounded-md w-60"
+          />
+        </div>
+
+        {/* DataTable */}
         {isLoading ? (
             <p className="text-center">Loading...</p>
         ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full table-auto border-collapse border border-gray-300">
-                <thead className="bg-gray-200">
-                <tr>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">ID</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Product Size</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Status</th>
-                  <th className="py-2 px-4 border-b text-left text-sm font-semibold">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {productSizes.map((size) => (
-                    <tr key={size.productSizeId} className="hover:bg-gray-100">
-                      <td className="py-2 px-4 border-b text-sm">{size.productSizeId}</td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editSizeId === size.productSizeId ? (
-                            <input
-                                type="text"
-                                value={editSize}
-                                onChange={(e) => setEditSize(e.target.value)}
-                                className="p-2 border border-gray-300 rounded-md w-60"
-                            />
-                        ) : (
-                            size.productSize
-                        )}
-                      </td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editSizeId === size.productSizeId ? (
-                            <select
-                                value={editStatus ? 'Active' : 'Inactive'}
-                                onChange={(e) => setEditStatus(e.target.value === 'Active')}
-                                className="p-2 border border-gray-300 rounded-md"
-                            >
-                              <option value="Active">Active</option>
-                              <option value="Inactive">Inactive</option>
-                            </select>
-                        ) : (
-                            <span className={`inline-block px-2 py-1 rounded-md ${size.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                        {size.status ? 'Active' : 'Inactive'}
-                      </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-4 border-b text-sm">
-                        {editSizeId === size.productSizeId ? (
-                            <button
-                                onClick={updateProductSize}
-                                className="bg-blue-500 text-white px-4 py-2 rounded-md"
-                            >
-                              Save
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                  setEditSizeId(size.productSizeId);
-                                  setEditSize(size.productSize);
-                                  setEditStatus(size.status);
-                                }}
-                                className="text-blue-500 hover:text-blue-700 mr-2"
-                            >
-                              Edit
-                            </button>
-                        )}
-                        <button
-                            onClick={() => deleteProductSize(size.productSizeId)}
-                            className="text-red-500 hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+                title="Product Sizes"
+                columns={columns}
+                data={filteredProductSizes}
+                pagination
+                highlightOnHover
+                responsive
+            />
         )}
       </div>
   );
