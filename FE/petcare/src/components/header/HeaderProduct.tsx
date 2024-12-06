@@ -19,7 +19,7 @@ const HeaderProduct = () => {
     <div className="flex justify-between items-center mb-5 bg-gray-200 p-4 rounded-lg shadow-md text-black">
       <div className="text-xl font-bold">Shop Cún Mèo</div>
       <div className="flex space-x-6">
-        <Link to="/" className="text-lg font-semibold hover:text-[#00B7C0]">
+        <Link to="/home" className="text-lg font-semibold hover:text-[#00B7C0]">
           Trang Chủ
         </Link>
         <Link to="/products" className="text-lg font-semibold hover:text-[#00B7C0]">
