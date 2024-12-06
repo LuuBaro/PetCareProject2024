@@ -5,6 +5,7 @@ import TopBar from "../components/PagesAdmin/TopBar";
 import SidebarMenu from "../components/PagesAdmin/SidebarMenu";
 import ManageProduct from "../components/Manage/ManageProduct";
 import ManageUser from "../components/Manage/ManageUser";// Add this import
+import ClientManagement from "../components/Manage/ManageClient";
 import ManageProductCategories from "../components/Manage/ManageProductCategories";
 import ManageBrand from "../components/Manage/ManageBrand";
 import UserManagement from "../components/Manage/ManageUser";
@@ -38,6 +39,7 @@ function Admin() {
               {/* Add more routes as needed */}
               <Route path="/brands" element={<ManageBrand />} /> {/* Add this route */}
               <Route path="/user" element={<UserManagement />} /> {/* Add this route */}
+              <Route path="/client" element={<ClientManagement />} /> {/* Add this route */}
               <Route path="/roles" element={<ManageRole />} /> {/* Add this route */}
               <Route path="/product-details" element={<ProductDetailManager />} /> {/* Add this route */}
               <Route path="/product-color" element={<ManageProductColors />} /> {/* Add this route */}

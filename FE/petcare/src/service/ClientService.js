@@ -51,7 +51,7 @@ updateUser: async (id, updatedUser) => {
       delete updatedUser.password;  // Không gửi mật khẩu nếu không thay đổi
     }
 
-    const response = await axios.put(`${BASE_URL}/update/${id}`, updatedUser, {
+    const response = await axios.put(`${BASE_URL}/${id}`, updatedUser, {
       headers: {
         'Content-Type': 'application/json',
         // Nếu cần thêm token:
