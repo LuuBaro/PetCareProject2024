@@ -83,7 +83,6 @@ public class PasswordResetController {
     }
 
 
-    // Endpoint to reset the password
     @PostMapping("/reset-sendmailpassword")
     public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> requestBody) {
         String token = requestBody.get("token");

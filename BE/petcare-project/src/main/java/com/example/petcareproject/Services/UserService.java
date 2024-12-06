@@ -121,5 +121,20 @@ public class UserService implements UserDetailsService {
         return userRepository.findById(id).orElse(null); // Tìm người dùng theo ID
     }
 
+    public boolean checkIfEmailExists(String email) {
+        User user = userRepository.findByEmail(email);
+        return user != null;  // Kiểm tra nếu user khác null, có nghĩa là email tồn tại
+    }
+
+
+    public void changePassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword)); // Mã hóa mật khẩu mới
+        userRepository.save(user); // Lưu lại thay đổi
+    }
+
+
 
 }

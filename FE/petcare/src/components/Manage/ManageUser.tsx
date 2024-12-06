@@ -4,6 +4,7 @@ import RoleService from "../../service/RoleService";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../../config/firebaseConfig";
 import { useForm } from "react-hook-form";
+import { Password } from "@mui/icons-material";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -36,11 +37,12 @@ const UserManagement = () => {
     setIsModalOpen(true);
     reset({
       fullName: user.fullName,
+      password: user.password,
       email: user.email,
       phone: user.phone,
     });
   };
-
+  
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -73,7 +75,7 @@ const UserManagement = () => {
   };
 
   const isDuplicateUser = (data) => {
-    return users.some(user =>
+    return users.some(user => 
       (user.email === data.email && user.userId !== (userToEdit?.userId || null)) ||
       (user.phone === data.phone && user.userId !== (userToEdit?.userId || null))
     );
@@ -85,17 +87,17 @@ const UserManagement = () => {
       email: data.email,
       phone: data.phone,
       totalSpent: userToEdit?.totalSpent || 0,
-      password: data.password || undefined, // If password is not provided, it will be undefined
+      password: data.password || userToEdit?.password, // Giữ nguyên mật khẩu cũ nếu trường password rỗng
       userRoles: selectedRoles.map((roleId) => ({ roleId })),
       registrationDate: formMode === "edit" ? userToEdit.registrationDate : new Date().toISOString(),
       imageUrl: userToEdit?.imageUrl || null,
       status: isStatus,
     };
-
+  
     if (file) {
       const fileRef = ref(storage, `user_images/${file.name}`);
       const uploadTask = uploadBytesResumable(fileRef, file);
-
+  
       uploadTask.on(
         "state_changed",
         null,
@@ -126,7 +128,7 @@ const UserManagement = () => {
         await UserService.createUser(userData);
         setMessage("Thêm người dùng thành công.");
       }
-      fetchUsers();
+      await fetchUsers();
       handleCloseModal();
     } catch (error) {
       setMessage("Lỗi khi lưu người dùng.");

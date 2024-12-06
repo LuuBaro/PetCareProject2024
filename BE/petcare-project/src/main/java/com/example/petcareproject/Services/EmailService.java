@@ -35,12 +35,16 @@ public class EmailService {
 
         mailSender.send(message);
     }
-    // Kiểm tra email có tồn tại trong hệ thống không
-    public boolean checkIfEmailExists(String email) {
+
+
+   // Kiểm tra email có tồn tại trong hệ thống không
+   public boolean checkIfEmailExists(String email) {
         return userService.checkIfEmailExists(email); // Gọi phương thức kiểm tra email từ UserService
     }
     public MimeMessage createMimeMessage() {
         return mailSender.createMimeMessage();
     }
+
+
 }
 

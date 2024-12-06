@@ -38,29 +38,35 @@ const UserService = {
   },
 
   // Cập nhật người dùng
-  updateUser: async (id, updatedUser) => {
-    try {
-      // Kiểm tra ID và dữ liệu cập nhật có hợp lệ không
-      if (!id) throw new Error('User ID is required');
-      if (!updatedUser || typeof updatedUser !== 'object') {
-        throw new Error('Updated user data must be provided as an object');
-      }
-
-      const response = await axios.put(`${BASE_URL}/${id}`, updatedUser, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Nếu cần thêm token:
-          // Authorization: `Bearer ${yourAuthToken}`,
-        },
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating user with ID ${id}:`, error?.response?.data || error.message);
-      // Quăng lỗi để xử lý thêm ở nơi gọi hàm
-      throw error.response?.data || error;
+updateUser: async (id, updatedUser) => {
+  try {
+    // Kiểm tra ID và dữ liệu cập nhật có hợp lệ không
+    if (!id) throw new Error('User ID is required');
+    if (!updatedUser || typeof updatedUser !== 'object') {
+      throw new Error('Updated user data must be provided as an object');
     }
-  },
+
+    // Kiểm tra xem có trường mật khẩu trong updatedUser không, nếu không thì xóa đi để không gửi tới server
+    if (!updatedUser.password || updatedUser.password.trim() === '') {
+      delete updatedUser.password;  // Không gửi mật khẩu nếu không thay đổi
+    }
+
+    const response = await axios.put(`${BASE_URL}/${id}`, updatedUser, {
+      headers: {
+        'Content-Type': 'application/json',
+        // Nếu cần thêm token:
+        // Authorization: `Bearer ${yourAuthToken}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating user with ID ${id}:`, error?.response?.data || error.message);
+    // Quăng lỗi để xử lý thêm ở nơi gọi hàm
+    throw error.response?.data || error;
+  }
+},
+
 
   // Xóa người dùng
   deleteUser: async (id) => {

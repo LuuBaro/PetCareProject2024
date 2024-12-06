@@ -104,15 +104,15 @@ public class UserController {
     }
 
 
-    @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
-        try {
-            userService.changePassword(request);
-            return ResponseEntity.ok("Đổi mật khẩu thành công");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+//    @PutMapping("/change-password")
+//    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+//        try {
+//            userService.changePassword(request);
+//            return ResponseEntity.ok("Đổi mật khẩu thành công");
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
 
 }
