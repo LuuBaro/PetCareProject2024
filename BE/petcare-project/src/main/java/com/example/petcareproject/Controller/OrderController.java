@@ -121,6 +121,7 @@ public class OrderController {
         return ResponseEntity.ok(revenue);
     }
 
+
     @GetMapping("/revenue/last-12-months")
     public ResponseEntity<?> getLast12MonthsRevenue() {
         List<Map<String, Object>> result = orderService.getLast12MonthsRevenue();
