@@ -59,6 +59,8 @@ public class UserController {
             existingUser.setEmail(userDetails.getEmail());
             existingUser.setPhone(userDetails.getPhone());
             existingUser.setTotalSpent(userDetails.getTotalSpent());
+            existingUser.setStatus(userDetails.isStatus());
+            existingUser.setImageUrl(userDetails.getImageUrl());
 
             Set<Role> roles = new HashSet<>();
             for (Role role : userDetails.getUserRoles()) {

@@ -96,7 +96,15 @@ const SidebarMenu = () => {
                                             to="/admin/user"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
-                                            Danh sách người dùng
+                                            Quản lý người dùng
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/client"
+                                            className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
+                                        >
+                                            Danh sách Người dùng
                                         </Link>
                                     </li>
                                     <li>
