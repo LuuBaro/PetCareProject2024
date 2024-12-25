@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from "react";
 import UserService from "../../service/UserService";
-import RoleService from "../../service/RoleService";
 
 const ClientManagement = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const usersPerPage = 20; // Number of users per page
 
   useEffect(() => {
     fetchUsers();
-    fetchRoles();
   }, []);
 
   const fetchUsers = async () => {
@@ -20,15 +17,6 @@ const ClientManagement = () => {
       setUsers(userList);
     } catch (error) {
       console.error("Lỗi khi lấy người dùng:", error);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const roleList = await RoleService.getAllRoles();
-      setRoles(roleList);
-    } catch (error) {
-      console.error("Lỗi khi lấy vai trò:", error);
     }
   };
 
@@ -45,7 +33,7 @@ const ClientManagement = () => {
     return nameMatch || phoneMatch;
   });
 
-  // Calculate the paginated users
+  // Paginate users
   const paginatedUsers = filteredUsers.slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage);
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
@@ -53,7 +41,7 @@ const ClientManagement = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Quản Lý Người Dùng</h1>
 
-      {/* Thanh Tìm Kiếm */}
+      {/* Search Bar */}
       <div className="mb-6">
         <input
           type="text"
@@ -64,7 +52,7 @@ const ClientManagement = () => {
         />
       </div>
 
-      {/* Bảng Người Dùng */}
+      {/* User Table */}
       <div className="overflow-hidden rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200 bg-white">
           <thead>
@@ -126,7 +114,7 @@ const ClientManagement = () => {
         </table>
       </div>
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       <div className="mt-4 flex justify-between items-center">
         <button
           disabled={currentPage === 0}

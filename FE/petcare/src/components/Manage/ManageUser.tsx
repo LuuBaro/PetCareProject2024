@@ -42,7 +42,7 @@ const UserManagement = () => {
       phone: user.phone,
     });
   };
-  
+
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -75,13 +75,32 @@ const UserManagement = () => {
   };
 
   const isDuplicateUser = (data) => {
-    return users.some(user => 
-      (user.email === data.email && user.userId !== (userToEdit?.userId || null)) ||
-      (user.phone === data.phone && user.userId !== (userToEdit?.userId || null))
+    const duplicateEmail = users.some(
+      (user) => user.email === data.email && user.userId !== (userToEdit?.userId || null)
     );
+    const duplicatePhone = users.some(
+      (user) => user.phone === data.phone && user.userId !== (userToEdit?.userId || null)
+    );
+
+    if (duplicateEmail) {
+      setMessage("Email đã tồn tại.");
+      return true;
+    }
+
+    if (duplicatePhone) {
+      setMessage("Số điện thoại đã tồn tại.");
+      return true;
+    }
+
+    return false;
   };
 
+
   const handleUserSubmit = async (data) => {
+    if (isDuplicateUser(data)) {
+      return;
+    }
+
     const userData = {
       fullName: data.fullName,
       email: data.email,
@@ -90,35 +109,35 @@ const UserManagement = () => {
       password: data.password || userToEdit?.password, // Giữ nguyên mật khẩu cũ nếu trường password rỗng
       userRoles: selectedRoles.map((roleId) => ({ roleId })),
       registrationDate: formMode === "edit" ? userToEdit.registrationDate : new Date().toISOString(),
-      // imageUrl: userToEdit?.imageUrl || null,
+      imageUrl: userToEdit?.imageUrl || null,
       status: isStatus,
     };
-    await submitUserData(userData);
-  
-    // if (file) {
-    //   const fileRef = ref(storage, `user_images/${file.name}`);
-    //   const uploadTask = uploadBytesResumable(fileRef, file);
-  
-    //   uploadTask.on(
-    //     "state_changed",
-    //     null,
-    //     (error) => {
-    //       setMessage("Lỗi khi tải ảnh lên.");
-    //     },
-    //     async () => {
-    //       try {
-    //         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-    //         userData.imageUrl = downloadURL;
-    //         await submitUserData(userData);
-    //       } catch (err) {
-    //         setMessage("Lỗi khi hoàn tất tải lên.");
-    //       }
-    //     }
-    //   );
-    // } else {
-    //   await submitUserData(userData);
-    // }
+
+    if (file) {
+      const fileRef = ref(storage, `user_images/${file.name}`);
+      const uploadTask = uploadBytesResumable(fileRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        null,
+        (error) => {
+          setMessage("Lỗi khi tải ảnh lên.");
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            userData.imageUrl = downloadURL;
+            await submitUserData(userData);
+          } catch (err) {
+            setMessage("Lỗi khi hoàn tất tải lên.");
+          }
+        }
+      );
+    } else {
+      await submitUserData(userData);
+    }
   };
+
 
   const submitUserData = async (userData) => {
     try {
@@ -136,17 +155,6 @@ const UserManagement = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này không?")) {
-      try {
-        await UserService.deleteUser(userId);
-        fetchUsers();
-        setMessage("Xóa người dùng thành công.");
-      } catch (error) {
-        setMessage("Lỗi khi xóa người dùng.");
-      }
-    }
-  };
 
   const handleRoleChange = (e) => {
     const options = e.target.options;
@@ -249,7 +257,7 @@ const UserManagement = () => {
             </div>
             <form onSubmit={handleSubmit(handleUserSubmit)}>
               <div className="flex gap-6">
-                {/* <div className="w-full sm:w-1/3">
+                <div className="w-full sm:w-1/3">
                   <label className="block font-medium mb-1">Hình ảnh</label>
                   <div className="relative w-[275px] h-[300px] border border-gray-300 rounded-md overflow-hidden">
                     {userToEdit && userToEdit.imageUrl ? (
@@ -268,7 +276,7 @@ const UserManagement = () => {
                     className="w-full border border-blue-500 p-3 rounded-md mt-2"
                     onChange={(e) => setFile(e.target.files[0])}
                   />
-                </div> */}
+                </div>
                 <div className="w-full ">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
@@ -294,12 +302,13 @@ const UserManagement = () => {
                           required: "Email không được để trống.",
                           pattern: {
                             value: /^\S+@\S+\.\S+$/,
-                            message: "Email không đúng định dạng."
-                          }
+                            message: "Email không đúng định dạng.",
+                          },
                         })}
                         className="w-full border border-gray-300 p-2 rounded-md"
                       />
                       {errors.email && <div className="text-red-600 text-sm">{errors.email.message}</div>}
+                      {message.includes("Email đã tồn tại") && <div className="text-red-600 text-sm">Email đã tồn tại.</div>}
                     </div>
                     <div>
                       <label className="block font-medium mb-1">Mật Khẩu</label>
@@ -324,12 +333,13 @@ const UserManagement = () => {
                           required: "Số điện thoại không được để trống.",
                           pattern: {
                             value: /^0\d{9}$/, // Must start with 0 and followed by 9 digits
-                            message: "Số điện thoại không hợp lệ!"
-                          }
+                            message: "Số điện thoại không hợp lệ!",
+                          },
                         })}
                         className="w-full border border-gray-300 p-2 rounded-md"
                       />
                       {errors.phone && <div className="text-red-600 text-sm">{errors.phone.message}</div>}
+                      {message.includes("Số điện thoại đã tồn tại") && <div className="text-red-600 text-sm">Số điện thoại đã tồn tại.</div>}
                     </div>
                     <div>
                       <label className="block font-medium mb-1">Vai Trò</label>
@@ -386,12 +396,6 @@ const UserManagement = () => {
                 >
                   {formMode === "add" ? "Thêm Người Dùng" : "Cập Nhật Người Dùng"}
                 </button>
-                <button
-                  onClick={resetForm}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-400 transition duration-200"
-                >
-                  Hủy
-                </button>
               </div>
 
             </form>
@@ -427,15 +431,9 @@ const UserManagement = () => {
                       <>
                         <button
                           onClick={() => handleEdit(user)}
-                          className="bg-blue-500 text-white p-2 rounded-md mr-2 hover:bg-blue-600 transition duration-200"
+                          className="bg-gradient-to-r from-blue-400 to-blue-600 text-white px-4 py-2 rounded-md mr-2 shadow-md hover:from-blue-500 hover:to-blue-700 hover:shadow-lg transition duration-300"
                         >
                           Chỉnh Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.userId)}
-                          className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition duration-200"
-                        >
-                          Xóa
                         </button>
                       </>
                     )}
