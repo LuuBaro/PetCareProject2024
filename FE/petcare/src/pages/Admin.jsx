@@ -15,7 +15,9 @@ import ProductSizeManager from "../components/Manage/ManageProductSizes";
 import ManageWeights from "../components/Manage/ManageWeights";
 import ManageInventory from "../components/Manage/ManageInventory";
 import ManageRole from "../components/Manage/ManageRole";
+import ManageClient from "../components/Manage/ManageClient"
 import VoucherManagement from "../components/Manage/Voucher";
+
 
 
 function Admin() {
@@ -39,6 +41,7 @@ function Admin() {
               <Route path="/admin/brands" element={<ManageBrand />} /> {/* Add this route */}
               <Route path="/admin/user" element={<UserManagement />} /> {/* Add this route */}
               <Route path="/admin/roles" element={<ManageRole />} /> {/* Add this route */}
+              <Route path="/admin/client" element={<ManageClient />} />{/* Add this route */}
               <Route path="/admin/product-details" element={<ProductDetailManager />} /> {/* Add this route */}
               <Route path="/admin/product-color" element={<ManageProductColors />} /> {/* Add this route */}
               <Route path="/admin/product-image" element={<ManageProductImages />} /> {/* Add this route */}

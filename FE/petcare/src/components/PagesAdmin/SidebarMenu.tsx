@@ -101,7 +101,7 @@ const SidebarMenu = () => {
                                     </li>
                                     <li>
                                         <Link
-                                            to="/client"
+                                            to="admin/client"
                                             className="block p-2 rounded-lg hover:bg-gray-500 transition duration-300"
                                         >
                                             Danh sách Người dùng

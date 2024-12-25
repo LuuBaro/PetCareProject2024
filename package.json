@@ -1,1 +1,9 @@
-{}
+{
+  "devDependencies": {
+    "vite": "^6.0.5"
+  },
+  "dependencies": {
+    "firebase": "^11.1.0",
+    "react-hook-form": "^7.54.2"
+  }
+}
