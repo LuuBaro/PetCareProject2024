@@ -631,14 +631,15 @@ const Checkout: React.FC<AddressFormProps> = ({ onSubmit, onCancel }) => {
             text: "Đơn hàng sẽ được tính với giá gốc.",
         });
     };
+
     const getRemainingDays = (startDate, endDate) => {
         const today = new Date();
-        const start = new Date(startDate);  // Ngày bắt đầu
-        const end = new Date(endDate);      // Ngày kết thúc
+        const start = new Date(startDate); // Ngày bắt đầu
+        const end = new Date(endDate); // Ngày kết thúc
 
         // Kiểm tra nếu ngày hiện tại trước ngày bắt đầu voucher
         if (today < start) {
-            return -1;  // Trả về -1 nếu voucher chưa bắt đầu, nghĩa là không thể sử dụng
+            return -1; // Trả về -1 nếu voucher chưa bắt đầu
         }
 
         const timeDifference = end - today;
@@ -931,54 +932,115 @@ const Checkout: React.FC<AddressFormProps> = ({ onSubmit, onCancel }) => {
                                     <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                         {vouchers
                                             .filter((voucher) => total >= voucher.condition) // Lọc chỉ các voucher thỏa điều kiện
+                                            .sort((a, b) => {
+                                                const daysLeftA = getRemainingDays(
+                                                    a.startDate,
+                                                    a.endDate
+                                                );
+                                                const daysLeftB = getRemainingDays(
+                                                    b.startDate,
+                                                    b.endDate
+                                                );
+
+                                                const isNotStartedA = daysLeftA === -1;
+                                                const isNotStartedB = daysLeftB === -1;
+
+                                                const isExpiredA = daysLeftA <= 0 && !isNotStartedA;
+                                                const isExpiredB = daysLeftB <= 0 && !isNotStartedB;
+
+                                                const isOutOfStockA = a.quantity === 0;
+                                                const isOutOfStockB = b.quantity === 0;
+
+                                                // Xếp ưu tiên: Có thể sử dụng -> Số lượng giảm dần
+                                                if (!isExpiredA && !isNotStartedA && !isOutOfStockA) {
+                                                    if (isExpiredB || isNotStartedB || isOutOfStockB)
+                                                        return -1;
+                                                }
+                                                if (!isExpiredB && !isNotStartedB && !isOutOfStockB) {
+                                                    if (isExpiredA || isNotStartedA || isOutOfStockA)
+                                                        return 1;
+                                                }
+
+                                                // Nếu cùng trạng thái, xếp theo số lượng giảm dần
+                                                return b.quantity - a.quantity;
+                                            })
                                             .map((voucher) => {
-                                                const daysLeft = getRemainingDays(voucher.startDate, voucher.endDate); // Sử dụng startDate và endDate
-                                                const isExpired = daysLeft <= 0;
-                                                const isNotStarted = daysLeft === -1; // Nếu voucher chưa bắt đầu
+                                                const daysLeft = getRemainingDays(
+                                                    voucher.startDate,
+                                                    voucher.endDate
+                                                );
+                                                const isNotStarted = daysLeft === -1; // Voucher chưa bắt đầu
+                                                const isExpired = daysLeft <= 0 && !isNotStarted; // Voucher đã hết hạn
+                                                const isOutOfStock = voucher.quantity === 0; // Voucher hết số lượng
 
                                                 return (
                                                     <div
                                                         key={voucher.voucherId}
-                                                        className={`p-2 cursor-pointer ${isExpired || isNotStarted ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                                                        className={`p-2 cursor-pointer ${
+                                                            isExpired || isNotStarted || isOutOfStock
+                                                                ? "opacity-50 cursor-not-allowed"
+                                                                : "hover:bg-gray-100"
+                                                        }`}
                                                         onClick={() => {
-                                                            if (!isExpired && !isNotStarted) handleVoucherSelect(voucher.voucherId); // Chỉ gọi khi chưa hết hạn và chưa bắt đầu
+                                                            if (
+                                                                !isExpired &&
+                                                                !isNotStarted &&!isOutOfStock
+                                                            ) {
+                                                                handleVoucherSelect(voucher.voucherId); // Chỉ gọi khi đủ điều kiện
+                                                            }
                                                         }}
                                                     >
                                                         <div className="font-semibold">{voucher.name}</div>
-                                                        <div
-                                                            className="text-sm text-gray-500">Giảm {voucher.percents}%
+                                                        <div className="text-sm text-gray-500">
+                                                            Giảm {voucher.percents}%
                                                         </div>
-                                                        <div className="text-xs text-gray-500">Số lượng còn
-                                                            lại: {voucher.quantity}</div>
+                                                        <div className="text-xs text-gray-500">
+                                                            Số lượng còn lại: {voucher.quantity}
+                                                        </div>
                                                         <div
-                                                            className={`text-xs font-medium ${isExpired ? 'text-red-500' : (isNotStarted ? 'text-yellow-500' : 'text-green-500')}`}
+                                                            className={`text-xs font-medium ${
+                                                                isNotStarted
+                                                                    ? "text-yellow-500"
+                                                                    : isExpired
+                                                                        ? "text-red-500"
+                                                                        : isOutOfStock
+                                                                            ? "text-red-500"
+                                                                            : "text-green-500"
+                                                            }`}
                                                         >
-                                                            {isExpired
-                                                                ? 'Voucher đã hết hạn'
-                                                                : isNotStarted
-                                                                    ? 'Voucher chưa bắt đầu'
-                                                                    : `${daysLeft} ngày còn lại`}
+                                                            {isNotStarted
+                                                                ? "Voucher chưa bắt đầu"
+                                                                : isExpired
+                                                                    ? "Voucher đã hết hạn"
+                                                                    : isOutOfStock
+                                                                        ? "Voucher đã hết"
+                                                                        : `${daysLeft} ngày còn lại`}
                                                         </div>
                                                     </div>
                                                 );
                                             })}
 
                                         {/* Hiển thị thông báo nếu không có voucher nào thỏa điều kiện */}
-                                        {vouchers.filter((voucher) => total >= voucher.condition).length === 0 && (
+                                        {vouchers.filter((voucher) => total >= voucher.condition)
+                                            .length === 0 && (
                                             <div className="text-center p-2 text-gray-500">
                                                 Không có voucher nào phù hợp với tổng tiền của bạn.
                                             </div>
                                         )}
 
                                         {/* Thông báo nếu tất cả voucher đều chưa bắt đầu */}
-                                        {vouchers.filter((voucher) => total >= voucher.condition && getRemainingDays(voucher.startDate, voucher.endDate) === -1).length > 0 && (
+                                        {vouchers.filter(
+                                            (voucher) =>
+                                                total >= voucher.condition &&
+                                                getRemainingDays(voucher.startDate, voucher.endDate) ===
+                                                -1
+                                        ).length > 0 && (
                                             <div className="text-center p-2 text-yellow-500">
                                                 Một số voucher chưa tới ngày sử dụng.
                                             </div>
                                         )}
                                     </div>
                                 )}
-
 
                             </div>
                             <button

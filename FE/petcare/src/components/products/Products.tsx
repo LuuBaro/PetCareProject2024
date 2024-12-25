@@ -47,10 +47,7 @@ export default function Products() {
     }, []);
 
     // Lấy dữ liệu sản phẩm từ API
-    // Lấy dữ liệu sản phẩm từ API
     useEffect(() => {
-        let intervalId;
-
         const fetchProducts = async () => {
             try {
                 const response = await ProductService.getAllProducts();
@@ -119,12 +116,12 @@ export default function Products() {
             fetchFavorites();
         };
 
-        // Gọi fetchData mỗi 1 giây
-        intervalId = setInterval(fetchData, 1000);
+        fetchData();
 
-        // Cleanup interval khi component unmount
-        return () => clearInterval(intervalId);
+        // Cleanup logic (nếu cần)
+        return () => {};
     }, [userId]);
+
 
 
 
