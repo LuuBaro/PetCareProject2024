@@ -229,7 +229,7 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-8 w-[80%]">
       <h1 className="text-3xl font-bold mb-6 text-center">Quản lý Nhân viên</h1>
       <div className="mb-4">
         <input
@@ -289,12 +289,21 @@ const UserManagement = () => {
                 {user.userRoles
                   .filter((role) => role.roleName !== "Người dùng")
                   .map((role) => (
-                    <span key={role.roleId} className="mr-2">
+                    <span
+                      key={role.roleId}
+                      className={`mr-2 ${role.roleName === "Admin" ? "font-bold text-green-600 " : ""}`}
+                    >
                       {role.roleName}
                     </span>
                   ))}
               </td>
-              <td className="px-4 py-2 text-gray-500 text-left">{renderStatus(user.status)}</td>
+              <td className="px-4 py-2 text-left">
+                <span
+                  className={`font-bold ${user.status === true ? "text-green-600" : user.status === false ? "text-red-600" : "text-gray-500"}`}
+                >
+                  {renderStatus(user.status)}
+                </span>
+              </td>
               <td className="px-4 py-2 text-left">
                 {user.userRoles.some((role) => role.roleName === "Admin") ? (
                   <span className="text-gray-400"></span>
@@ -310,6 +319,7 @@ const UserManagement = () => {
             </tr>
           ))}
         </tbody>
+
       </table>
       {confirmModalOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
@@ -351,7 +361,7 @@ const UserManagement = () => {
 
           {/* Current Page Number */}
           <span className="text-gray-600 font-medium">
-            Trang {currentPage + 1}
+            Trang {currentPage + 1} / {totalPages}
           </span>
 
           {/* Next Button */}
@@ -366,6 +376,7 @@ const UserManagement = () => {
           </button>
         </div>
       </div>
+
 
 
 

@@ -24,7 +24,7 @@ function Admin() {
     <Router>
       <div className="flex flex-col h-screen bg-gray-100 font-sans">
         <div className="flex flex-1 lg:flex-row sm:flex-col overflow-hidden">
-          <aside className="lg:w-1/6 sm:w-full bg-white shadow-md">
+          <aside className="lg:w-1/6 sm:w-full bg-gray-50 shadow-md">
             <SidebarMenu />
           </aside>
 
