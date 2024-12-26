@@ -1,141 +1,225 @@
 import React, { useEffect, useState } from "react";
 import UserService from "../../service/UserService";
+import { useForm } from "react-hook-form";
 
-const ClientManagement = () => {
+const ManageClient = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const usersPerPage = 20; // Number of users per page
+  const [usersPerPage] = useState(15);
+  const [activeTab, setActiveTab] = useState("active");
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [userToChangeStatus, setUserToChangeStatus] = useState(null);
+
+  const { reset } = useForm();
+
+  
+  const handleOpenConfirmModal = (user) => {
+    setUserToChangeStatus(user);
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmChangeStatus = async () => {
+    if (userToChangeStatus) {
+      await handleChangeStatus(userToChangeStatus);
+      setConfirmModalOpen(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const userList = await UserService.getAllUsers();
-      setUsers(userList);
+      // Filter users whose roleName is "Người dùng"
+      const filteredUsers = userList.filter(user =>
+        user.userRoles && user.userRoles.some(role => role.roleName === "Người dùng")
+      );
+      setUsers(filteredUsers);
     } catch (error) {
-      console.error("Lỗi khi lấy người dùng:", error);
+      setMessage("Lỗi khi lấy danh sách người dùng.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const filteredUsers = users.filter((user) => {
-    const isUserRole = user.userRoles?.some(role => role.roleName === "Người dùng");
-    if (!isUserRole) return false;
-
-    if (!searchTerm.trim()) return true;
-
-    const search = searchTerm.toLowerCase();
-    const nameMatch = user.fullName?.toLowerCase()?.includes(search) || false;
-    const phoneMatch = user.phone?.includes(searchTerm) || false;
-
-    return nameMatch || phoneMatch;
+    return (
+      ((user.fullName && user.fullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.phone && user.phone.includes(searchTerm)))
+    );
   });
 
-  // Paginate users
-  const paginatedUsers = filteredUsers.slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage);
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const activeUsers = filteredUsers.filter(user => user.status === true);
+  const inactiveUsers = filteredUsers.filter(user => user.status === false);
+
+  const paginatedUsers = (activeTab === "active" ? activeUsers : inactiveUsers).slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage);
+  const totalPages = Math.ceil((activeTab === "active" ? activeUsers.length : inactiveUsers.length) / usersPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const renderStatus = (status) => {
+    return status ? "Hoạt động" : "Không hoạt động";
+  };
+
+  const handleChangeStatus = async (user) => {
+    try {
+      const updatedUser = { ...user, status: !user.status };
+      await UserService.updateUser(user.userId, updatedUser);
+      setMessage("Trạng thái người dùng đã thay đổi.");
+      await fetchUsers();
+    } catch (error) {
+      setMessage("Lỗi khi thay đổi trạng thái.");
+    }
+  };
+
+  const getRoleName = (userRoles) => {
+    if (userRoles && userRoles.length > 0) {
+      return userRoles[0].roleName || "Người dùng";
+    }
+    return "Người dùng";  // Default role if no role is found
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Quản Lý Người Dùng</h1>
-
-      {/* Search Bar */}
-      <div className="mb-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">Quản lý Người dùng</h1>
+      <div className="mb-4">
         <input
           type="text"
-          className="w-full border border-gray-300 p-3 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full border border-gray-300 p-3 rounded-md shadow-sm"
           placeholder="Tìm kiếm theo tên hoặc số điện thoại..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab("active")}
+            className={`px-4 py-2 ${activeTab === "active" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded-md transition duration-200`}
+          >
+            Hoạt Động
+          </button>
+          <button
+            onClick={() => setActiveTab("inactive")}
+            className={`px-4 py-2 ${activeTab === "inactive" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded-md transition duration-200`}
+          >
+            Không Hoạt Động
+          </button>
+        </div>
+      </div>
 
       {/* User Table */}
-      <div className="overflow-hidden rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200 bg-white">
-          <thead>
-            <tr className="bg-gradient-to-r from-indigo-500 to-purple-600">
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">ID</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tên Đầy Đủ</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Số Điện Thoại</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Ngày Đăng Ký</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tổng Chi Tiêu</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Trạng Thái</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Ảnh</th>
-              <th className="p-3 text-left text-xs font-medium text-white uppercase tracking-wider">Vai Trò</th>
+      <table className="min-w-full bg-white border border-gray-300">
+        <thead>
+          <tr className="bg-gradient-to-r from-blue-500 to-blue-600 to-blue-650">
+            <th className="px-4 py-2 text-left text-white ">Họ và tên</th>
+            <th className="px-4 py-2 text-left text-white">Email</th>
+            <th className="px-4 py-2 text-left text-white">Số điện thoại</th>
+            <th className="px-4 py-2 text-left text-white">Ngày đăng ký</th>
+            <th className="px-4 py-2 text-left text-white">Tổng chi tiêu</th>
+            <th className="px-4 py-2 text-left text-white">Trạng thái</th>
+            <th className="px-4 py-2 text-left text-white">Vai trò</th>
+            <th className="px-4 py-2 text-left text-white">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedUsers.map((user, index) => (
+            <tr
+              key={user.userId}
+              className={`border-b ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-100`}
+            >
+              <td className="px-4 py-2 text-gray-700">{user.fullName}</td>
+              <td className="px-4 py-2 text-gray-700">{user.email}</td>
+              <td className="px-4 py-2 text-gray-700">{user.phone}</td>
+              <td className="px-4 py-2 text-gray-500">
+                {new Date(user.registrationDate).toLocaleDateString()}
+              </td>
+              <td className="px-4 py-2 text-gray-500">{user.totalSpent}</td>
+              <td className="px-4 py-2 text-gray-500">{renderStatus(user.status)}</td>
+              <td className="px-4 py-2 text-gray-500">{getRoleName(user.userRoles)}</td> {/* Get role name dynamically */}
+              <td className="px-4 py-2 text-left">
+                {user.userRoles.some((role) => role.roleName === "Admin") ? (
+                  <span className="text-gray-400"></span>
+                ) : (
+                  <button
+                    onClick={() => handleOpenConfirmModal(user)}
+                    className="ml-2 bg-gradient-to-r from-red-400 to-red-600 text-white px-4 py-2 rounded-md shadow-md"
+                  >
+                    Đổi Trạng Thái
+                  </button>
+                )}
+              </td>
             </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedUsers.map((user, index) => (
-              <tr key={user.userId} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-indigo-50 transition-colors duration-200`}>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-900">{user.userId}</td>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-900 font-medium">{user.fullName || ''}</td>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-600">{user.email || ''}</td>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-600">{user.phone || ''}</td>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-600">
-                  {user.registrationDate 
-                    ? new Date(user.registrationDate).toLocaleDateString("vi-VN")
-                    : ''}
-                </td>
-                <td className="p-3 whitespace-nowrap text-sm text-gray-600">
-                  {user.totalSpent ? `${user.totalSpent.toLocaleString()} đ` : "0 đ"}
-                </td>
-                <td className="p-3 whitespace-nowrap">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    user.status 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {user.status ? "Hoạt động" : "Vô hiệu hóa"}
-                  </span>
-                </td>
-                <td className="p-3 whitespace-nowrap">
-                  {user.imageUrl ? (
-                    <img
-                      src={user.imageUrl}
-                      alt="Avatar"
-                      className="w-10 h-10 rounded-full border-2 border-gray-200"
-                    />
-                  ) : (
-                    <span className="text-gray-500 text-sm">Không có ảnh</span>
-                  )}
-                </td>
-                <td className="p-3 whitespace-nowrap">
-                  <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">
-                    {user.userRoles?.map((role) => role.roleName).join(", ") || ''}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
+      {confirmModalOpen && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl w-1/3">
+            <h2 className="text-xl font-bold mb-4 text-center">Xác Nhận</h2>
+            <p className="text-center">Bạn có chắc chắn muốn đổi trạng thái của người dùng này?</p>
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleConfirmChangeStatus}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md mr-2"
+              >
+                Có
+              </button>
+              <button
+                onClick={() => setConfirmModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 rounded-md"
+              >
+                Không
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagination */}
-      <div className="mt-4 flex justify-between items-center">
-        <button
-          disabled={currentPage === 0}
-          onClick={() => setCurrentPage(currentPage - 1)}
-          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md disabled:opacity-50"
-        >
-          Trước
-        </button>
-        <div>
-          Trang {currentPage + 1} của {totalPages}
+      <div className="flex justify-between items-center mt-6">
+        {/* Pagination Buttons */}
+        <div className="flex items-center space-x-3">
+          {/* Previous Button */}
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+            className={`px-4 py-2 text-sm font-medium rounded-lg 
+        ${currentPage === 0 ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'} 
+        transition-colors duration-300`}
+          >
+            Sau
+          </button>
+
+          {/* Current Page Number */}
+          <span className="text-gray-600 font-medium">
+            Trang {currentPage + 1}
+          </span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages - 1}
+            className={`px-4 py-2 text-sm font-medium rounded-lg 
+        ${currentPage === totalPages - 1 ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'} 
+        transition-colors duration-300`}
+          >
+            Tiếp
+          </button>
         </div>
-        <button
-          disabled={currentPage === totalPages - 1}
-          onClick={() => setCurrentPage(currentPage + 1)}
-          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md disabled:opacity-50"
-        >
-          Tiếp
-        </button>
       </div>
+
     </div>
   );
 };
 
-export default ClientManagement;
+export default ManageClient;

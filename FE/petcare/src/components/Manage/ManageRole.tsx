@@ -28,8 +28,18 @@ const ManageRole = () => {
 
   const handleRoleSubmit = async (e) => {
     e.preventDefault(); // Ngăn chặn hành vi mặc định của form
+    const roleName = e.target.roleName.value.trim(); // Lấy tên vai trò từ form
+
+    // Kiểm tra trùng lặp vai trò
+    const isDuplicate = roles.some(role => role.roleName.toLowerCase() === roleName.toLowerCase());
+
+    if (isDuplicate) {
+      setMessage('Vai trò này đã tồn tại!'); // Thông báo nếu trùng lặp
+      return;
+    }
+
     const roleData = {
-      roleName: e.target.roleName.value
+      roleName
     };
 
     try {
@@ -69,48 +79,55 @@ const ManageRole = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Quản lý vai trò</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">Quản lý vai trò</h1>
       {message && <div className="mb-4 text-red-600">{message}</div>} {/* Hiển thị thông báo nếu có */}
 
-      <div className="bg-white p-5 rounded shadow-lg mb-4">
-        <h2 className="text-xl mb-4">{formMode === 'edit' ? 'Sửa vai trò' : 'Thêm vai trò'}</h2>
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <form onSubmit={handleRoleSubmit}>
-          <div className="mb-4">
-            <label className="block mb-1">Tên vai trò</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tên vai trò</label>
             <input
               name="roleName"
               type="text"
               defaultValue={roleToEdit ? roleToEdit.roleName : ''} // Nếu đang sửa, điền tên vai trò
               required
-              className="border p-2 w-full"
+              className="border p-3 w-full text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 transition duration-300 ease-in-out"
             />
           </div>
-          <button type="submit" className="bg-blue-500 text-white rounded p-2">
+          <button
+            type="submit"
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg p-3 transition duration-300 ease-in-out hover:from-blue-600 hover:to-indigo-700"
+          >
             {formMode === 'edit' ? 'Cập nhật' : 'Lưu'}
           </button>
         </form>
       </div>
 
       {loading ? (
-        <p>Đang tải danh sách vai trò...</p> // Hiển thị trạng thái loading
+        <p className="text-gray-600">Đang tải danh sách vai trò...</p> // Hiển thị trạng thái loading
       ) : (
-        <table className="min-w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">ID</th>
-              <th className="border p-2">Tên vai trò</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.map(role => (
-              <tr key={role.roleId}> {/* Mỗi dòng đại diện cho một vai trò */}
-                <td className="border p-2">{role.roleId}</td> {/* Hiển thị ID vai trò */}
-                <td className="border p-2">{role.roleName}</td> {/* Hiển thị tên vai trò */}
+        <div className="overflow-x-auto bg-white shadow-md rounded-md">
+          <table className="min-w-full table-auto">
+            <thead>
+              <tr className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                <th className="p-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
+                <th className="p-3 text-left text-xs font-medium uppercase tracking-wider">Tên vai trò</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {roles.map((role, index) => (
+                <tr
+                  key={role.roleId}
+                  className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'} hover:bg-indigo-100 transition-colors duration-200`}
+                >
+                  <td className="px-4 py-2 text-sm text-gray-700">{role.roleId}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{role.roleName}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
